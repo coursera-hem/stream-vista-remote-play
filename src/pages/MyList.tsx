@@ -116,7 +116,7 @@ const MyList = () => {
                 </div>
                 <div className="mt-2">
                   <h3 className="text-white font-semibold truncate">{movie.title}</h3>
-                  <p className="text-gray-400 text-sm">{movie.releaseYear}</p>
+                  <p className="text-gray-400 text-sm">{movie.year}</p>
                 </div>
               </div>
             ))}
