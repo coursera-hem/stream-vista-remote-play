@@ -1,26 +1,26 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { Navigation } from '../components/Navigation';
+import { Sidebar } from '../components/Sidebar';
 import { MovieDetailModal } from '../components/MovieDetailModal';
 import { SearchModal } from '../components/SearchModal';
-import { LoginModal } from '../components/LoginModal';
 import { VideoPlayer } from '../components/VideoPlayer';
 import { mockMovies, Movie } from '../data/mockMovies';
 import { addToRecentlyWatched } from '../services/recentlyWatched';
 import { addToWatchlist, removeFromWatchlist, getWatchlist } from '../services/watchlistService';
+import { KeyboardNavigationProvider, useKeyboardNavigation } from '../components/KeyboardNavigation';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '../hooks/use-toast';
 
-const Movies = () => {
+const MoviesContent = () => {
   const [showSearch, setShowSearch] = useState(false);
-  const [showLogin, setShowLogin] = useState(false);
   const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null);
   const [showMovieDetail, setShowMovieDetail] = useState(false);
   const [showVideoPlayer, setShowVideoPlayer] = useState(false);
   const [watchlist, setWatchlist] = useState<string[]>([]);
 
   const { currentUser, userData, logout } = useAuth();
+  const { focusedElement } = useKeyboardNavigation();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -51,6 +51,11 @@ const Movies = () => {
     setSelectedMovie(movie);
     setShowMovieDetail(false);
     setShowVideoPlayer(true);
+    
+    toast({
+      title: "Now Playing",
+      description: `Playing ${movie.title}`
+    });
   };
 
   const handleLogin = () => {
@@ -61,11 +66,20 @@ const Movies = () => {
     await logout();
     setWatchlist([]);
     navigate('/');
+    
+    toast({
+      title: "Signed Out",
+      description: "You have been successfully signed out"
+    });
   };
 
   const handleToggleWatchlist = async (movieId: string) => {
     if (!currentUser) {
-      setShowLogin(true);
+      toast({
+        title: "Sign In Required",
+        description: "Please sign in to add movies to your watchlist",
+        variant: "destructive"
+      });
       return;
     }
 
@@ -105,22 +119,23 @@ const Movies = () => {
 
   return (
     <div className="min-h-screen bg-black text-white">
-      <Navigation
-        onSearch={() => setShowSearch(true)}
-        onLogin={handleLogin}
-        isLoggedIn={!!currentUser}
+      <Sidebar
         onLogout={handleLogout}
-        currentUser={userData ? { name: userData.name, email: userData.email } : undefined}
+        isLoggedIn={!!currentUser}
+        onLogin={handleLogin}
       />
 
-      <div className="pt-20 px-6">
+      <div className="pl-4 pt-16 pr-6">
         <h1 className="text-4xl font-bold text-white mb-8">All Movies</h1>
         
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-          {mockMovies.map((movie) => (
+          {mockMovies.map((movie, index) => (
             <div
               key={movie.id}
-              className="group relative cursor-pointer"
+              id={`movie-${index}`}
+              className={`group relative cursor-pointer transition-all duration-300 ${
+                focusedElement === `movie-${index}` ? 'ring-4 ring-red-500 scale-105' : ''
+              }`}
               onClick={() => handleMovieSelect(movie)}
             >
               <div className="relative aspect-[2/3] rounded-lg overflow-hidden">
@@ -160,14 +175,15 @@ const Movies = () => {
         isInWatchlist={selectedMovie ? watchlist.includes(selectedMovie.id) : false}
         onToggleWatchlist={handleToggleWatchlist}
       />
-
-      <LoginModal
-        isOpen={showLogin}
-        onClose={() => setShowLogin(false)}
-        onLogin={handleLogin}
-        onRegister={() => navigate('/signup')}
-      />
     </div>
+  );
+};
+
+const Movies = () => {
+  return (
+    <KeyboardNavigationProvider>
+      <MoviesContent />
+    </KeyboardNavigationProvider>
   );
 };
 
