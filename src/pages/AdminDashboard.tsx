@@ -3,8 +3,9 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { MovieUploadForm } from '../components/MovieUploadForm';
+import { MovieManager } from '../components/MovieManager';
 import { Button } from '../components/ui/button';
-import { LogOut, Upload, List } from 'lucide-react';
+import { LogOut, Upload, List, ArrowLeft } from 'lucide-react';
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('upload');
@@ -22,6 +23,10 @@ const AdminDashboard = () => {
     navigate('/signin');
   };
 
+  const handleBackToHome = () => {
+    navigate('/');
+  };
+
   if (!userData?.isAdmin) {
     return <div>Access denied</div>;
   }
@@ -33,7 +38,18 @@ const AdminDashboard = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-8">
-              <h1 className="text-2xl font-bold text-red-600">StreamFlix Admin</h1>
+              <div className="flex items-center gap-4">
+                <Button
+                  onClick={handleBackToHome}
+                  variant="outline"
+                  size="sm"
+                  className="border-gray-600 text-white hover:bg-gray-800"
+                >
+                  <ArrowLeft size={16} className="mr-2" />
+                  Home
+                </Button>
+                <h1 className="text-2xl font-bold text-red-600">StreamFlix Admin</h1>
+              </div>
               <nav className="flex gap-4">
                 <button
                   onClick={() => setActiveTab('upload')}
@@ -81,12 +97,7 @@ const AdminDashboard = () => {
         )}
 
         {activeTab === 'manage' && (
-          <div>
-            <h2 className="text-3xl font-bold text-white mb-8">Manage Movies</h2>
-            <div className="bg-gray-900 rounded-lg p-6">
-              <p className="text-gray-400">Movie management features coming soon...</p>
-            </div>
-          </div>
+          <MovieManager onBack={() => setActiveTab('upload')} />
         )}
       </main>
     </div>

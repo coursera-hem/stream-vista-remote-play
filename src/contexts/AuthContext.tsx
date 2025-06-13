@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { 
   User, 
@@ -7,7 +6,9 @@ import {
   signInWithPopup,
   GoogleAuthProvider,
   signOut,
-  updateProfile
+  updateProfile,
+  setPersistence,
+  browserLocalPersistence
 } from 'firebase/auth';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { auth, db } from '../config/firebase';
@@ -47,6 +48,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
 
   const googleProvider = new GoogleAuthProvider();
+
+  useEffect(() => {
+    // Set persistence to keep user logged in
+    setPersistence(auth, browserLocalPersistence);
+  }, []);
 
   const fetchUserData = async (user: User) => {
     try {

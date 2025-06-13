@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { Navigation } from '../components/Navigation';
 import { MovieDetailModal } from '../components/MovieDetailModal';
@@ -8,7 +8,9 @@ import { LoginModal } from '../components/LoginModal';
 import { VideoPlayer } from '../components/VideoPlayer';
 import { mockMovies, Movie } from '../data/mockMovies';
 import { addToRecentlyWatched } from '../services/recentlyWatched';
+import { addToWatchlist, removeFromWatchlist, getWatchlist } from '../services/watchlistService';
 import { useNavigate } from 'react-router-dom';
+import { useToast } from '../hooks/use-toast';
 
 const Movies = () => {
   const [showSearch, setShowSearch] = useState(false);
@@ -20,6 +22,24 @@ const Movies = () => {
 
   const { currentUser, userData, logout } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
+
+  useEffect(() => {
+    if (currentUser) {
+      loadWatchlist();
+    }
+  }, [currentUser]);
+
+  const loadWatchlist = async () => {
+    if (!currentUser) return;
+    
+    try {
+      const userWatchlist = await getWatchlist(currentUser.uid);
+      setWatchlist(userWatchlist);
+    } catch (error) {
+      console.error('Error loading watchlist:', error);
+    }
+  };
 
   const handleMovieSelect = (movie: Movie) => {
     setSelectedMovie(movie);
@@ -43,17 +63,35 @@ const Movies = () => {
     navigate('/');
   };
 
-  const handleToggleWatchlist = (movieId: string) => {
+  const handleToggleWatchlist = async (movieId: string) => {
     if (!currentUser) {
       setShowLogin(true);
       return;
     }
 
-    setWatchlist(prev => 
-      prev.includes(movieId) 
-        ? prev.filter(id => id !== movieId)
-        : [...prev, movieId]
-    );
+    try {
+      if (watchlist.includes(movieId)) {
+        await removeFromWatchlist(currentUser.uid, movieId);
+        setWatchlist(prev => prev.filter(id => id !== movieId));
+        toast({
+          title: "Removed from watchlist",
+          description: "Movie removed from your list"
+        });
+      } else {
+        await addToWatchlist(currentUser.uid, movieId);
+        setWatchlist(prev => [...prev, movieId]);
+        toast({
+          title: "Added to watchlist",
+          description: "Movie added to your list"
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update watchlist",
+        variant: "destructive"
+      });
+    }
   };
 
   if (showVideoPlayer && selectedMovie) {
