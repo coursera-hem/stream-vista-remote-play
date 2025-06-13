@@ -11,7 +11,6 @@ const SignIn = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -25,7 +24,7 @@ const SignIn = () => {
 
     try {
       await login(email, password);
-      navigate(isAdmin ? '/admin' : '/');
+      navigate('/');
     } catch (error: any) {
       setError(error.message);
     } finally {
@@ -38,8 +37,8 @@ const SignIn = () => {
     setLoading(true);
 
     try {
-      await loginWithGoogle(isAdmin);
-      navigate(isAdmin ? '/admin' : '/');
+      await loginWithGoogle();
+      navigate('/');
     } catch (error: any) {
       setError(error.message);
     } finally {
@@ -56,28 +55,6 @@ const SignIn = () => {
         </div>
 
         <div className="bg-gray-900 rounded-lg p-6 space-y-4">
-          {/* User Type Selection */}
-          <div className="flex gap-4">
-            <button
-              type="button"
-              onClick={() => setIsAdmin(false)}
-              className={`flex-1 py-2 px-4 rounded transition-colors ${
-                !isAdmin ? 'bg-red-600 text-white' : 'bg-gray-700 text-gray-300'
-              }`}
-            >
-              User
-            </button>
-            <button
-              type="button"
-              onClick={() => setIsAdmin(true)}
-              className={`flex-1 py-2 px-4 rounded transition-colors ${
-                isAdmin ? 'bg-red-600 text-white' : 'bg-gray-700 text-gray-300'
-              }`}
-            >
-              Admin
-            </button>
-          </div>
-
           {error && (
             <div className="bg-red-500/20 border border-red-500 text-red-500 px-4 py-2 rounded">
               {error}

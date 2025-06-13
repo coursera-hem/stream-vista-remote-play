@@ -17,15 +17,17 @@ interface UserData {
   email: string;
   name: string;
   isAdmin: boolean;
+  profileImage?: string;
 }
 
 interface AuthContextType {
   currentUser: User | null;
   userData: UserData | null;
   login: (email: string, password: string) => Promise<void>;
-  register: (name: string, email: string, password: string, isAdmin?: boolean) => Promise<void>;
-  loginWithGoogle: (isAdmin?: boolean) => Promise<void>;
+  register: (name: string, email: string, password: string) => Promise<void>;
+  loginWithGoogle: () => Promise<void>;
   logout: () => Promise<void>;
+  updateUserProfile: (data: Partial<UserData>) => Promise<void>;
   loading: boolean;
 }
 
@@ -50,7 +52,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const userDoc = await getDoc(doc(db, 'users', user.uid));
       if (userDoc.exists()) {
-        setUserData(userDoc.data() as UserData);
+        const data = userDoc.data() as UserData;
+        setUserData(data);
+        console.log('User data loaded:', data);
       }
     } catch (error) {
       console.error('Error fetching user data:', error);
@@ -61,33 +65,55 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     await signInWithEmailAndPassword(auth, email, password);
   };
 
-  const register = async (name: string, email: string, password: string, isAdmin = false) => {
+  const register = async (name: string, email: string, password: string) => {
     const { user } = await createUserWithEmailAndPassword(auth, email, password);
     await updateProfile(user, { displayName: name });
+    
+    // Check if this is the first user (make them admin)
+    const usersSnapshot = await getDoc(doc(db, 'settings', 'userCount'));
+    const isFirstUser = !usersSnapshot.exists();
     
     const userData = {
       uid: user.uid,
       email: user.email!,
       name,
-      isAdmin
+      isAdmin: isFirstUser // First user becomes admin
     };
     
     await setDoc(doc(db, 'users', user.uid), userData);
+    if (isFirstUser) {
+      await setDoc(doc(db, 'settings', 'userCount'), { count: 1 });
+    }
   };
 
-  const loginWithGoogle = async (isAdmin = false) => {
+  const loginWithGoogle = async () => {
     const { user } = await signInWithPopup(auth, googleProvider);
     
     const userDoc = await getDoc(doc(db, 'users', user.uid));
     if (!userDoc.exists()) {
+      // Check if this is the first user (make them admin)
+      const usersSnapshot = await getDoc(doc(db, 'settings', 'userCount'));
+      const isFirstUser = !usersSnapshot.exists();
+      
       const userData = {
         uid: user.uid,
         email: user.email!,
         name: user.displayName || 'Google User',
-        isAdmin
+        isAdmin: isFirstUser // First user becomes admin
       };
       await setDoc(doc(db, 'users', user.uid), userData);
+      if (isFirstUser) {
+        await setDoc(doc(db, 'settings', 'userCount'), { count: 1 });
+      }
     }
+  };
+
+  const updateUserProfile = async (data: Partial<UserData>) => {
+    if (!currentUser) return;
+    
+    const updatedData = { ...userData, ...data };
+    await setDoc(doc(db, 'users', currentUser.uid), updatedData);
+    setUserData(updatedData);
   };
 
   const logout = async () => {
@@ -97,6 +123,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (user) => {
+      console.log('Auth state changed:', user?.email);
       setCurrentUser(user);
       if (user) {
         await fetchUserData(user);
@@ -116,6 +143,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     register,
     loginWithGoogle,
     logout,
+    updateUserProfile,
     loading
   };
 

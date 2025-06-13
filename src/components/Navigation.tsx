@@ -1,6 +1,8 @@
 
 import React, { useState } from 'react';
-import { Search, Menu, User, Home, Film, Bookmark, LogOut } from 'lucide-react';
+import { Search, Menu, User, Home, Film, Bookmark, LogOut, UserCog } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 interface NavigationProps {
   onSearch: () => void;
@@ -18,28 +20,53 @@ export const Navigation: React.FC<NavigationProps> = ({
   currentUser
 }) => {
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const { userData } = useAuth();
+  const navigate = useNavigate();
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-40 bg-black/90 backdrop-blur-sm border-b border-gray-800">
       <div className="flex items-center justify-between px-6 py-4">
         {/* Logo */}
         <div className="flex items-center gap-8">
-          <h1 className="text-2xl font-bold text-red-600">StreamFlix</h1>
+          <h1 
+            className="text-2xl font-bold text-red-600 cursor-pointer"
+            onClick={() => navigate('/')}
+          >
+            StreamFlix
+          </h1>
           
           {/* Navigation links */}
           <div className="hidden md:flex items-center gap-6">
-            <a href="#" className="text-white hover:text-gray-300 transition-colors flex items-center gap-2">
+            <button 
+              onClick={() => navigate('/')}
+              className="text-white hover:text-gray-300 transition-colors flex items-center gap-2"
+            >
               <Home className="w-4 h-4" />
               Home
-            </a>
-            <a href="#" className="text-white hover:text-gray-300 transition-colors flex items-center gap-2">
+            </button>
+            <button 
+              onClick={() => navigate('/movies')}
+              className="text-white hover:text-gray-300 transition-colors flex items-center gap-2"
+            >
               <Film className="w-4 h-4" />
               Movies
-            </a>
-            <a href="#" className="text-white hover:text-gray-300 transition-colors flex items-center gap-2">
+            </button>
+            <button 
+              onClick={() => navigate('/mylist')}
+              className="text-white hover:text-gray-300 transition-colors flex items-center gap-2"
+            >
               <Bookmark className="w-4 h-4" />
               My List
-            </a>
+            </button>
+            {userData?.isAdmin && (
+              <button 
+                onClick={() => navigate('/admin')}
+                className="text-white hover:text-gray-300 transition-colors flex items-center gap-2"
+              >
+                <UserCog className="w-4 h-4" />
+                Admin Panel
+              </button>
+            )}
           </div>
         </div>
 
@@ -68,8 +95,23 @@ export const Navigation: React.FC<NavigationProps> = ({
                   <div className="p-4 border-b border-gray-700">
                     <p className="text-white font-semibold">{currentUser?.name || 'User'}</p>
                     <p className="text-gray-400 text-sm">{currentUser?.email || 'user@example.com'}</p>
+                    {userData?.isAdmin && (
+                      <span className="inline-block bg-red-600 text-white text-xs px-2 py-1 rounded mt-1">
+                        Admin
+                      </span>
+                    )}
                   </div>
                   <div className="p-2">
+                    <button
+                      onClick={() => {
+                        navigate('/profile');
+                        setShowUserMenu(false);
+                      }}
+                      className="w-full flex items-center gap-3 px-3 py-2 text-white hover:bg-gray-800 rounded transition-colors"
+                    >
+                      <User className="w-4 h-4" />
+                      Profile
+                    </button>
                     <button
                       onClick={onLogout}
                       className="w-full flex items-center gap-3 px-3 py-2 text-white hover:bg-gray-800 rounded transition-colors"
