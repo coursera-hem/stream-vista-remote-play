@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback } from 'react';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
@@ -77,10 +76,16 @@ export const AnimeUploadForm = () => {
   };
 
   const handlePosterUpload = async (file: File) => {
-    if (!file) return;
+    if (!file) {
+      console.log('No file provided for poster upload');
+      return;
+    }
+
+    console.log('Starting poster upload for file:', file.name, 'Size:', file.size, 'Type:', file.type);
 
     const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
     if (!allowedTypes.includes(file.type)) {
+      console.error('Invalid file type:', file.type);
       toast({
         title: "Error",
         description: "Please select a valid image file (JPEG, PNG, WebP)",
@@ -91,6 +96,7 @@ export const AnimeUploadForm = () => {
 
     const maxSize = 5 * 1024 * 1024; // 5MB
     if (file.size > maxSize) {
+      console.error('File too large:', file.size);
       toast({
         title: "Error",
         description: "Image size should be less than 5MB",
@@ -103,32 +109,60 @@ export const AnimeUploadForm = () => {
     setPosterUploadProgress(0);
 
     try {
+      console.log('Firebase storage instance:', storage);
+      
       const timestamp = Date.now();
-      const fileName = `anime-posters/${timestamp}_${file.name}`;
+      const sanitizedFileName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+      const fileName = `anime-posters/${timestamp}_${sanitizedFileName}`;
+      
+      console.log('Creating storage reference with path:', fileName);
       const storageRef = ref(storage, fileName);
+      console.log('Storage reference created:', storageRef);
+      
+      console.log('Starting upload task...');
       const uploadTask = uploadBytesResumable(storageRef, file);
 
       uploadTask.on('state_changed',
         (snapshot) => {
           const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+          console.log('Upload progress:', progress + '%');
+          console.log('Bytes transferred:', snapshot.bytesTransferred, 'Total bytes:', snapshot.totalBytes);
           setPosterUploadProgress(Math.round(progress));
         },
         (error) => {
           console.error('Poster upload error:', error);
+          console.error('Error code:', error.code);
+          console.error('Error message:', error.message);
+          
+          let errorMessage = 'Failed to upload poster image';
+          if (error.code === 'storage/unauthorized') {
+            errorMessage = 'Storage access denied. Please check Firebase storage rules.';
+          } else if (error.code === 'storage/canceled') {
+            errorMessage = 'Upload was canceled.';
+          } else if (error.code === 'storage/unknown') {
+            errorMessage = 'Unknown storage error occurred.';
+          }
+          
           toast({
             title: "Upload Error",
-            description: "Failed to upload poster image",
+            description: errorMessage,
             variant: "destructive"
           });
           setPosterUploading(false);
+          setPosterUploadProgress(0);
         },
         async () => {
           try {
+            console.log('Upload completed, getting download URL...');
             const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+            console.log('Download URL obtained:', downloadURL);
+            
             setFormData(prev => ({
               ...prev,
               poster: downloadURL
             }));
+            
+            console.log('Poster URL set in form data:', downloadURL);
             
             toast({
               title: "Success",
@@ -144,17 +178,19 @@ export const AnimeUploadForm = () => {
               variant: "destructive"
             });
             setPosterUploading(false);
+            setPosterUploadProgress(0);
           }
         }
       );
     } catch (error) {
-      console.error('Poster upload error:', error);
+      console.error('Poster upload initialization error:', error);
       toast({
         title: "Error",
         description: "Failed to start poster upload",
         variant: "destructive"
       });
       setPosterUploading(false);
+      setPosterUploadProgress(0);
     }
   };
 
@@ -186,7 +222,8 @@ export const AnimeUploadForm = () => {
 
     try {
       const timestamp = Date.now();
-      const fileName = `anime-videos/${timestamp}_${file.name}`;
+      const sanitizedFileName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+      const fileName = `anime-videos/${timestamp}_${sanitizedFileName}`;
       const storageRef = ref(storage, fileName);
       const uploadTask = uploadBytesResumable(storageRef, file);
 
@@ -251,6 +288,7 @@ export const AnimeUploadForm = () => {
   const handlePosterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
+      console.log('Poster file selected:', file);
       setPosterFile(file);
       handlePosterUpload(file);
     }
@@ -299,6 +337,7 @@ export const AnimeUploadForm = () => {
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       const file = e.dataTransfer.files[0];
       if (file.type.startsWith('image/')) {
+        console.log('Poster file dropped:', file);
         setPosterFile(file);
         setPosterUploadMethod('upload');
         handlePosterUpload(file);
@@ -322,6 +361,9 @@ export const AnimeUploadForm = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    console.log('Form submission started');
+    console.log('Current form data:', formData);
     
     if (!formData.driveLink) {
       toast({
@@ -364,6 +406,7 @@ export const AnimeUploadForm = () => {
         uploadedAt: serverTimestamp()
       };
 
+      console.log('Saving anime data to database:', animeData);
       await addDoc(collection(db, 'animes'), animeData);
 
       toast({
@@ -406,6 +449,19 @@ export const AnimeUploadForm = () => {
   return (
     <div className="max-w-2xl mx-auto">
       <div className="bg-gray-900 rounded-lg p-6">
+        {/* Debug Information */}
+        {(posterUploading || uploading) && (
+          <div className="mb-6 p-4 bg-blue-500/20 border border-blue-500 text-blue-400 rounded">
+            <div className="text-sm">
+              <p>Debug Info:</p>
+              <p>Poster uploading: {posterUploading ? 'Yes' : 'No'}</p>
+              <p>Video uploading: {uploading ? 'Yes' : 'No'}</p>
+              <p>Poster URL: {formData.poster || 'None'}</p>
+              <p>Firebase Storage: {storage ? 'Connected' : 'Not connected'}</p>
+            </div>
+          </div>
+        )}
+
         {(loading && uploadProgress > 0) || (posterUploading && posterUploadProgress > 0) && (
           <div className="mb-6 space-y-4">
             {loading && uploadProgress > 0 && (
@@ -534,9 +590,9 @@ export const AnimeUploadForm = () => {
                 {posterUploading ? (
                   <div className="space-y-4">
                     <ImageIcon className="w-12 h-12 text-red-500 mx-auto animate-pulse" />
-                    <p className="text-gray-300">Uploading poster...</p>
+                    <p className="text-gray-300">Uploading poster... {posterUploadProgress}%</p>
                   </div>
-                ) : formData.poster && posterFile ? (
+                ) : formData.poster ? (
                   <div className="space-y-2">
                     <img 
                       src={formData.poster} 
@@ -544,6 +600,7 @@ export const AnimeUploadForm = () => {
                       className="w-32 h-48 object-cover mx-auto rounded-lg"
                     />
                     <p className="text-green-400">Poster uploaded successfully!</p>
+                    <p className="text-xs text-gray-400 break-all">{formData.poster}</p>
                   </div>
                 ) : (
                   <div className="space-y-4">
@@ -553,7 +610,7 @@ export const AnimeUploadForm = () => {
                       <Input
                         id="poster-file"
                         type="file"
-                        accept="image/*"
+                        accept="image/jpeg,image/jpg,image/png,image/webp"
                         onChange={handlePosterChange}
                         className="bg-gray-800 border-gray-600 text-white file:bg-gray-700 file:text-white file:border-0 file:rounded file:px-4 file:py-2 file:mr-4"
                       />
