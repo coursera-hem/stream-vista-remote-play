@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { Sidebar } from '../components/Sidebar';
@@ -13,6 +12,7 @@ import { useNavigate } from 'react-router-dom';
 import { useToast } from '../hooks/use-toast';
 import { collection, getDocs, doc, getDoc } from 'firebase/firestore';
 import { db } from '../config/firebase';
+import { Play, Star, Calendar, Clock } from 'lucide-react';
 
 const MyListContent = () => {
   const [showSearch, setShowSearch] = useState(false);
@@ -237,31 +237,61 @@ const MyListContent = () => {
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {watchlistMovies.map((movie, index) => (
               <div
                 key={movie.id}
                 id={`movie-${index}`}
-                className={`group relative cursor-pointer transition-all duration-300 ${
-                  focusedElement === `movie-${index}` ? 'ring-4 ring-red-500 scale-105' : ''
+                className={`bg-gray-800 rounded-lg overflow-hidden hover:scale-105 transition-transform duration-300 group cursor-pointer ${
+                  focusedElement === `movie-${index}` ? 'ring-4 ring-red-500' : ''
                 }`}
                 onClick={() => handleMovieSelect(movie)}
               >
-                <div className="relative aspect-[2/3] rounded-lg overflow-hidden">
+                <div className="relative">
                   <img
                     src={movie.poster}
                     alt={movie.title}
-                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                    className="w-full h-64 object-cover"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.src = '/placeholder.svg';
+                    }}
                   />
-                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-                    <button className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-semibold">
-                      Play
+                  
+                  <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-opacity duration-300 flex items-center justify-center">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handlePlayMovie(movie);
+                      }}
+                      className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-red-600 text-white rounded-full p-3 hover:bg-red-700"
+                    >
+                      <Play size={24} fill="white" />
                     </button>
                   </div>
+                  
+                  <div className="absolute top-2 right-2 bg-black bg-opacity-70 text-white px-2 py-1 rounded text-sm">
+                    {movie.genre}
+                  </div>
                 </div>
-                <div className="mt-2">
-                  <h3 className="text-white font-semibold truncate">{movie.title}</h3>
-                  <p className="text-gray-400 text-sm">{movie.year}</p>
+                
+                <div className="p-4">
+                  <h3 className="text-white font-semibold text-lg mb-2 truncate">{movie.title}</h3>
+                  <div className="flex items-center gap-4 text-gray-400 text-sm mb-2">
+                    <div className="flex items-center gap-1">
+                      <Star size={14} className="text-yellow-500" fill="currentColor" />
+                      <span>{movie.rating.toFixed(1)}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Calendar size={14} />
+                      <span>{movie.year}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Clock size={14} />
+                      <span>{movie.duration}</span>
+                    </div>
+                  </div>
+                  <p className="text-gray-400 text-sm line-clamp-2">{movie.description}</p>
                 </div>
               </div>
             ))}
