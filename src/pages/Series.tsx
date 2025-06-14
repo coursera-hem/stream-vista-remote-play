@@ -122,7 +122,7 @@ const Series = () => {
 
       <div className="pl-6 pr-6">
         <div className="max-w-7xl mx-auto">
-          <h1 className="text-4xl font-bold text-white mb-8 pt-6">Series</h1>
+          <h1 className="text-4xl font-bold text-white mb-8 pt-20">Series</h1>
           
           <SeriesGrid series={series} onSeriesSelect={handleSeriesSelect} />
 
