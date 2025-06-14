@@ -1,27 +1,31 @@
+
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { Navigation } from '../components/Navigation';
+import { Sidebar } from '../components/Sidebar';
+import { Button } from '../components/ui/button';
+import { FilePlus, Users, PlaySquare, Tv, Film } from 'lucide-react';
+import { useToast } from '../hooks/use-toast';
 import { MovieManager } from '../components/MovieManager';
 import { AnimeManager } from '../components/AnimeManager';
 import { SeriesManager } from '../components/SeriesManager';
-import { EpisodeManager } from '../components/EpisodeManager';
 import { MovieUploadForm } from '../components/MovieUploadForm';
 import { AnimeUploadForm } from '../components/AnimeUploadForm';
 import { SeriesUploadForm } from '../components/SeriesUploadForm';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
-import { Button } from '../components/ui/button';
-import { ArrowLeft, Film, Tv, PlaySquare, Upload, Plus } from 'lucide-react';
-import { useToast } from '../hooks/use-toast';
+import { EpisodeUploadForm } from '../components/EpisodeUploadForm';
+import { EpisodeManager } from '../components/EpisodeManager';
 
 const AdminDashboard = () => {
-  const { currentUser, userData, loading } = useAuth();
+  const { currentUser, userData, logout, loading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [selectedAnime, setSelectedAnime] = useState<{ id: string; title: string } | null>(null);
-  const [selectedSeries, setSelectedSeries] = useState<{ id: string; title: string } | null>(null);
+
+  const [activeSection, setActiveSection] = useState<'dashboard' | 'movies' | 'anime' | 'series' | 'users'>('dashboard');
   const [showMovieUpload, setShowMovieUpload] = useState(false);
   const [showAnimeUpload, setShowAnimeUpload] = useState(false);
   const [showSeriesUpload, setShowSeriesUpload] = useState(false);
+  const [managingEpisodes, setManagingEpisodes] = useState<{ animeId: string, animeTitle: string } | null>(null);
 
   // Immediate and comprehensive access control
   useEffect(() => {
@@ -74,181 +78,68 @@ const AdminDashboard = () => {
   }
 
   const handleManageEpisodes = (animeId: string, animeTitle: string) => {
-    console.log('Managing episodes for anime:', { animeId, animeTitle });
-    setSelectedAnime({ id: animeId, title: animeTitle });
+    setManagingEpisodes({ animeId, animeTitle });
   };
 
   const handleManageSeriesEpisodes = (seriesId: string, seriesTitle: string) => {
-    console.log('Managing episodes for series:', { seriesId, seriesTitle });
-    setSelectedSeries({ id: seriesId, title: seriesTitle });
+    setManagingEpisodes({ animeId: seriesId, animeTitle: seriesTitle });
   };
 
-  const handleBackToAnime = () => {
-    setSelectedAnime(null);
+  const handleLogin = () => {
+    navigate('/signin');
   };
 
-  const handleBackToSeries = () => {
-    setSelectedSeries(null);
+  const handleLogout = async () => {
+    await logout();
+    navigate('/');
   };
 
-  const handleBackToDashboard = () => {
-    setShowMovieUpload(false);
-    setShowAnimeUpload(false);
-    setShowSeriesUpload(false);
-    setSelectedAnime(null);
-    setSelectedSeries(null);
-  };
-
-  const handleAnimeUploadSuccess = () => {
-    toast({
-      title: "Success",
-      description: "Anime uploaded successfully!"
-    });
-    handleBackToDashboard();
-  };
-
-  const handleSeriesUploadSuccess = () => {
-    toast({
-      title: "Success",
-      description: "Series uploaded successfully!"
-    });
-    handleBackToDashboard();
-  };
-
-  if (!currentUser || !userData?.isAdmin) {
-    return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="text-white text-xl">Loading...</div>
-      </div>
-    );
-  }
-
-  // Show Movie Upload Form
-  if (showMovieUpload) {
+  // Episode management view
+  if (managingEpisodes) {
     return (
       <div className="min-h-screen bg-black text-white">
-        <div className="container mx-auto px-4 py-8">
-          <div className="flex items-center gap-4 mb-8">
-            <Button
-              onClick={handleBackToDashboard}
-              variant="outline"
-              size="sm"
-              className="border-gray-600 text-white hover:bg-gray-800"
-            >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Dashboard
-            </Button>
-            <h1 className="text-3xl font-bold">Upload New Movie</h1>
-          </div>
-          <div className="bg-gray-900 rounded-lg p-6 border border-gray-700">
-            <MovieUploadForm />
-          </div>
-        </div>
-      </div>
-    );
-  }
+        <Navigation
+          onSearch={() => {}}
+          onLogin={handleLogin}
+          isLoggedIn={!!currentUser}
+          onLogout={handleLogout}
+          currentUser={userData ? { name: userData.name, email: userData.email } : undefined}
+        />
+        
+        <Sidebar
+          onLogout={handleLogout}
+          isLoggedIn={!!currentUser}
+          onLogin={handleLogin}
+        />
 
-  // Show Anime Upload Form
-  if (showAnimeUpload) {
-    return (
-      <div className="min-h-screen bg-black text-white">
-        <div className="container mx-auto px-4 py-8">
-          <div className="flex items-center gap-4 mb-8">
-            <Button
-              onClick={handleBackToDashboard}
-              variant="outline"
-              size="sm"
-              className="border-gray-600 text-white hover:bg-gray-800"
-            >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Dashboard
-            </Button>
-            <h1 className="text-3xl font-bold">Upload New Anime</h1>
+        <div className="pt-20 px-6">
+          <div className="max-w-7xl mx-auto">
+            <div className="flex items-center gap-4 mb-6">
+              <Button
+                onClick={() => setManagingEpisodes(null)}
+                variant="outline"
+                size="sm"
+                className="border-gray-600 text-white hover:bg-gray-800"
+              >
+                ← Back to Admin Dashboard
+              </Button>
+              <h1 className="text-3xl font-bold text-white">
+                Manage Episodes for "{managingEpisodes.animeTitle}"
+              </h1>
+            </div>
+            
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <EpisodeUploadForm 
+                animeId={managingEpisodes.animeId}
+                animeTitle={managingEpisodes.animeTitle}
+                onEpisodeAdded={() => {}}
+              />
+              <EpisodeManager 
+                animeId={managingEpisodes.animeId}
+                selectedEpisode={null}
+              />
+            </div>
           </div>
-          <div className="bg-gray-900 rounded-lg p-6 border border-gray-700">
-            <AnimeUploadForm />
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Show Series Upload Form
-  if (showSeriesUpload) {
-    return (
-      <div className="min-h-screen bg-black text-white">
-        <div className="container mx-auto px-4 py-8">
-          <div className="flex items-center gap-4 mb-8">
-            <Button
-              onClick={handleBackToDashboard}
-              variant="outline"
-              size="sm"
-              className="border-gray-600 text-white hover:bg-gray-800"
-            >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Dashboard
-            </Button>
-            <h1 className="text-3xl font-bold">Upload New Series</h1>
-          </div>
-          <div className="bg-gray-900 rounded-lg p-6 border border-gray-700">
-            <SeriesUploadForm />
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (selectedAnime) {
-    return (
-      <div className="min-h-screen bg-black text-white">
-        <div className="container mx-auto px-4 py-8">
-          <div className="flex items-center gap-4 mb-8">
-            <Button
-              onClick={handleBackToAnime}
-              variant="outline"
-              size="sm"
-              className="border-gray-600 text-white hover:bg-gray-800"
-            >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Anime
-            </Button>
-            <h1 className="text-3xl font-bold">
-              Manage Episodes - {selectedAnime.title}
-            </h1>
-          </div>
-          <EpisodeManager 
-            animeId={selectedAnime.id} 
-            animeTitle={selectedAnime.title}
-            onBack={handleBackToAnime} 
-          />
-        </div>
-      </div>
-    );
-  }
-
-  if (selectedSeries) {
-    return (
-      <div className="min-h-screen bg-black text-white">
-        <div className="container mx-auto px-4 py-8">
-          <div className="flex items-center gap-4 mb-8">
-            <Button
-              onClick={handleBackToSeries}
-              variant="outline"
-              size="sm"
-              className="border-gray-600 text-white hover:bg-gray-800"
-            >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Series
-            </Button>
-            <h1 className="text-3xl font-bold">
-              Manage Episodes - {selectedSeries.title}
-            </h1>
-          </div>
-          <EpisodeManager 
-            animeId={selectedSeries.id} 
-            animeTitle={selectedSeries.title}
-            onBack={handleBackToSeries} 
-          />
         </div>
       </div>
     );
@@ -256,115 +147,191 @@ const AdminDashboard = () => {
 
   return (
     <div className="min-h-screen bg-black text-white">
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-4">
-            <Button
-              onClick={() => navigate('/')}
-              variant="outline"
-              size="sm"
-              className="border-gray-600 text-white hover:bg-gray-800"
-            >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Home
-            </Button>
-            <h1 className="text-4xl font-bold text-red-600">Admin Dashboard</h1>
-          </div>
-          <div className="text-right">
-            <p className="text-gray-400">Welcome, {userData.name}</p>
-            <p className="text-sm text-red-400">Administrator</p>
-          </div>
+      <Navigation
+        onSearch={() => {}}
+        onLogin={handleLogin}
+        isLoggedIn={!!currentUser}
+        onLogout={handleLogout}
+        currentUser={userData ? { name: userData.name, email: userData.email } : undefined}
+      />
+      
+      <Sidebar
+        onLogout={handleLogout}
+        isLoggedIn={!!currentUser}
+        onLogin={handleLogin}
+      />
+
+      <div className="pt-20 px-6">
+        <div className="max-w-7xl mx-auto">
+          <h1 className="text-4xl font-bold text-white mb-8">Admin Dashboard</h1>
+          
+          {activeSection === 'dashboard' && (
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div 
+                  className="bg-gray-800 p-6 rounded-lg cursor-pointer hover:bg-gray-700 transition-colors"
+                  onClick={() => setActiveSection('movies')}
+                >
+                  <div className="flex items-center gap-3">
+                    <Film className="w-8 h-8 text-red-500" />
+                    <div>
+                      <h3 className="text-lg font-semibold text-white">Movies</h3>
+                      <p className="text-gray-400">Manage movie content</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div 
+                  className="bg-gray-800 p-6 rounded-lg cursor-pointer hover:bg-gray-700 transition-colors"
+                  onClick={() => setActiveSection('anime')}
+                >
+                  <div className="flex items-center gap-3">
+                    <Tv className="w-8 h-8 text-blue-500" />
+                    <div>
+                      <h3 className="text-lg font-semibold text-white">Anime</h3>
+                      <p className="text-gray-400">Manage anime content</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div 
+                  className="bg-gray-800 p-6 rounded-lg cursor-pointer hover:bg-gray-700 transition-colors"
+                  onClick={() => setActiveSection('series')}
+                >
+                  <div className="flex items-center gap-3">
+                    <PlaySquare className="w-8 h-8 text-green-500" />
+                    <div>
+                      <h3 className="text-lg font-semibold text-white">Series</h3>
+                      <p className="text-gray-400">Manage series content</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div 
+                  className="bg-gray-800 p-6 rounded-lg cursor-pointer hover:bg-gray-700 transition-colors"
+                  onClick={() => setActiveSection('users')}
+                >
+                  <div className="flex items-center gap-3">
+                    <Users className="w-8 h-8 text-purple-500" />
+                    <div>
+                      <h3 className="text-lg font-semibold text-white">Users</h3>
+                      <p className="text-gray-400">Manage user accounts</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-gray-900 rounded-lg p-6">
+                <h2 className="text-2xl font-bold text-white mb-4">Quick Actions</h2>
+                <div className="flex flex-wrap gap-4">
+                  <Button 
+                    onClick={() => setShowMovieUpload(true)}
+                    className="bg-red-600 hover:bg-red-700 flex items-center gap-2"
+                  >
+                    <FilePlus size={16} />
+                    Upload Movie
+                  </Button>
+                  <Button 
+                    onClick={() => setShowAnimeUpload(true)}
+                    className="bg-blue-600 hover:bg-blue-700 flex items-center gap-2"
+                  >
+                    <FilePlus size={16} />
+                    Upload Anime
+                  </Button>
+                  <Button 
+                    onClick={() => setShowSeriesUpload(true)}
+                    className="bg-green-600 hover:bg-green-700 flex items-center gap-2"
+                  >
+                    <FilePlus size={16} />
+                    Upload Series
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeSection === 'movies' && (
+            <MovieManager onBack={() => setActiveSection('dashboard')} />
+          )}
+
+          {activeSection === 'anime' && (
+            <AnimeManager 
+              onBack={() => setActiveSection('dashboard')}
+              onManageEpisodes={handleManageEpisodes}
+            />
+          )}
+
+          {activeSection === 'series' && (
+            <SeriesManager 
+              onBack={() => setActiveSection('dashboard')}
+              onManageEpisodes={handleManageSeriesEpisodes}
+            />
+          )}
+
+          {activeSection === 'users' && (
+            <div className="bg-gray-900 rounded-lg p-6">
+              <h2 className="text-2xl font-bold text-white mb-4">User Management</h2>
+              <p className="text-gray-400">User management features coming soon...</p>
+            </div>
+          )}
+
+          {showMovieUpload && (
+            <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+              <div className="bg-gray-900 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+                <div className="p-6">
+                  <div className="flex justify-between items-center mb-4">
+                    <h2 className="text-2xl font-bold text-white">Upload Movie</h2>
+                    <button
+                      onClick={() => setShowMovieUpload(false)}
+                      className="text-gray-400 hover:text-white text-2xl"
+                    >
+                      ×
+                    </button>
+                  </div>
+                  <MovieUploadForm />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {showAnimeUpload && (
+            <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+              <div className="bg-gray-900 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+                <div className="p-6">
+                  <div className="flex justify-between items-center mb-4">
+                    <h2 className="text-2xl font-bold text-white">Upload Anime</h2>
+                    <button
+                      onClick={() => setShowAnimeUpload(false)}
+                      className="text-gray-400 hover:text-white text-2xl"
+                    >
+                      ×
+                    </button>
+                  </div>
+                  <AnimeUploadForm />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {showSeriesUpload && (
+            <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+              <div className="bg-gray-900 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+                <div className="p-6">
+                  <div className="flex justify-between items-center mb-4">
+                    <h2 className="text-2xl font-bold text-white">Upload Series</h2>
+                    <button
+                      onClick={() => setShowSeriesUpload(false)}
+                      className="text-gray-400 hover:text-white text-2xl"
+                    >
+                      ×
+                    </button>
+                  </div>
+                  <SeriesUploadForm />
+                </div>
+              </div>
+            </div>
+          )}
         </div>
-
-        {/* Quick Action Buttons */}
-        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-3 gap-4 mb-8">
-          <Button
-            onClick={() => setShowMovieUpload(true)}
-            className="bg-red-600 hover:bg-red-700 h-16 text-lg flex items-center justify-center gap-3"
-          >
-            <Upload className="w-6 h-6" />
-            Upload Movie
-          </Button>
-          <Button
-            onClick={() => setShowSeriesUpload(true)}
-            className="bg-green-600 hover:bg-green-700 h-16 text-lg flex items-center justify-center gap-3"
-          >
-            <Plus className="w-6 h-6" />
-            Upload Series
-          </Button>
-          <Button
-            onClick={() => setShowAnimeUpload(true)}
-            className="bg-blue-600 hover:bg-blue-700 h-16 text-lg flex items-center justify-center gap-3"
-          >
-            <Plus className="w-6 h-6" />
-            Upload Anime
-          </Button>
-        </div>
-
-        <Tabs defaultValue="movies" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 bg-gray-900 border-gray-700">
-            <TabsTrigger 
-              value="movies" 
-              className="data-[state=active]:bg-red-600 data-[state=active]:text-white flex items-center gap-2"
-            >
-              <Film className="w-4 h-4" />
-              Movies
-            </TabsTrigger>
-            <TabsTrigger 
-              value="anime" 
-              className="data-[state=active]:bg-red-600 data-[state=active]:text-white flex items-center gap-2"
-            >
-              <Tv className="w-4 h-4" />
-              Anime
-            </TabsTrigger>
-            <TabsTrigger 
-              value="series" 
-              className="data-[state=active]:bg-red-600 data-[state=active]:text-white flex items-center gap-2"
-            >
-              <PlaySquare className="w-4 h-4" />
-              Series
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="movies" className="mt-6">
-            <div className="bg-gray-900 rounded-lg p-6 border border-gray-700">
-              <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-                <Film className="w-6 h-6 text-red-600" />
-                Movie Management
-              </h2>
-              <p className="text-gray-400 mb-6">
-                Upload, edit, and manage movies in your collection.
-              </p>
-              <MovieManager onBack={() => navigate('/')} />
-            </div>
-          </TabsContent>
-
-          <TabsContent value="anime" className="mt-6">
-            <div className="bg-gray-900 rounded-lg p-6 border border-gray-700">
-              <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-                <Tv className="w-6 h-6 text-red-600" />
-                Anime Management
-              </h2>
-              <p className="text-gray-400 mb-6">
-                Upload, edit, and manage anime series in your collection.
-              </p>
-              <AnimeManager onBack={() => navigate('/')} onManageEpisodes={handleManageEpisodes} />
-            </div>
-          </TabsContent>
-
-          <TabsContent value="series" className="mt-6">
-            <div className="bg-gray-900 rounded-lg p-6 border border-gray-700">
-              <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-                <PlaySquare className="w-6 h-6 text-red-600" />
-                Series Management
-              </h2>
-              <p className="text-gray-400 mb-6">
-                Upload, edit, and manage TV series in your collection.
-              </p>
-              <SeriesManager onBack={() => navigate('/')} onManageEpisodes={handleManageSeriesEpisodes} />
-            </div>
-          </TabsContent>
-        </Tabs>
       </div>
     </div>
   );
