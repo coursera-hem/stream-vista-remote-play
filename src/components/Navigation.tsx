@@ -32,7 +32,7 @@ export const Navigation: React.FC<NavigationProps> = ({
             className="text-2xl font-bold text-red-600 cursor-pointer"
             onClick={() => navigate('/')}
           >
-            StreamFlix
+            Hem's Flix
           </h1>
           
           {/* Navigation links */}

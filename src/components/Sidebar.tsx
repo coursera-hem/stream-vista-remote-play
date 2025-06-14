@@ -78,7 +78,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onLogout, isLoggedIn, onLogin 
       `}>
         {/* Logo */}
         <div className="p-6 border-b border-gray-800">
-          <h1 className="text-2xl font-bold text-red-600">StreamFlix</h1>
+          <h1 className="text-2xl font-bold text-red-600">Hem's Flix</h1>
         </div>
 
         {/* Navigation Menu */}
