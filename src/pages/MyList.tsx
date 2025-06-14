@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { Sidebar } from '../components/Sidebar';
@@ -174,13 +175,13 @@ const MyListContent = () => {
       if (watchlist.includes(movieId)) {
         await removeFromWatchlist(currentUser.uid, movieId);
         toast({
-          title: "Removed from watchlist",
+          title: "Removed from list",
           description: "Movie removed from your list"
         });
       } else {
         await addToWatchlist(currentUser.uid, movieId);
         toast({
-          title: "Added to watchlist",
+          title: "Added to list",
           description: "Movie added to your list"
         });
       }
@@ -188,7 +189,7 @@ const MyListContent = () => {
       console.error('Error toggling watchlist:', error);
       toast({
         title: "Error",
-        description: "Failed to update watchlist",
+        description: "Failed to update list",
         variant: "destructive"
       });
     }
@@ -222,11 +223,11 @@ const MyListContent = () => {
         
         {loading ? (
           <div className="text-center py-20">
-            <p className="text-gray-400 text-xl">Loading your watchlist...</p>
+            <p className="text-gray-400 text-xl">Loading your list...</p>
           </div>
         ) : watchlistMovies.length === 0 ? (
           <div className="text-center py-20">
-            <p className="text-gray-400 text-xl mb-4">Your watchlist is empty</p>
+            <p className="text-gray-400 text-xl mb-4">Your list is empty</p>
             <p className="text-gray-500 mb-6">Add movies to your list by clicking the bookmark icon</p>
             <button
               onClick={() => navigate('/')}
