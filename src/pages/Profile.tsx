@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { Navigation } from '../components/Navigation';
@@ -6,7 +5,7 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
-import { Save, Link as LinkIcon, Upload, X, Trash2 } from 'lucide-react';
+import { Save, Link as LinkIcon, Upload, X, Trash2, ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { uploadProfileImage, validateImageFile } from '../utils/fileUpload';
 import { deleteUser } from 'firebase/auth';
@@ -36,6 +35,10 @@ const Profile = () => {
   const handleLogout = async () => {
     await logout();
     navigate('/');
+  };
+
+  const handleBack = () => {
+    navigate(-1);
   };
 
   const handleDeleteAccount = async () => {
@@ -155,6 +158,16 @@ Type "DELETE" to confirm:`;
       />
 
       <div className="pt-20 px-6 max-w-2xl mx-auto">
+        {/* Back Button */}
+        <Button
+          onClick={handleBack}
+          variant="ghost"
+          className="mb-4 text-white hover:text-gray-300 hover:bg-gray-800 p-2"
+        >
+          <ArrowLeft size={20} className="mr-2" />
+          Back
+        </Button>
+
         <h1 className="text-4xl font-bold text-white mb-8">Profile</h1>
         
         <div className="bg-gray-900 rounded-lg p-6 space-y-6">
