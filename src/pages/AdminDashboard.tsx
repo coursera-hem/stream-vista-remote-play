@@ -3,12 +3,13 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { MovieUploadForm } from '../components/MovieUploadForm';
+import { AnimeUploadForm } from '../components/AnimeUploadForm';
 import { MovieManager } from '../components/MovieManager';
 import { Button } from '../components/ui/button';
-import { LogOut, Upload, List, ArrowLeft } from 'lucide-react';
+import { LogOut, Upload, List, ArrowLeft, Film, Tv } from 'lucide-react';
 
 const AdminDashboard = () => {
-  const [activeTab, setActiveTab] = useState('upload');
+  const [activeTab, setActiveTab] = useState('upload-movie');
   const { userData, logout } = useAuth();
   const navigate = useNavigate();
 
@@ -52,13 +53,22 @@ const AdminDashboard = () => {
               </div>
               <nav className="flex gap-4">
                 <button
-                  onClick={() => setActiveTab('upload')}
+                  onClick={() => setActiveTab('upload-movie')}
                   className={`flex items-center gap-2 px-4 py-2 rounded transition-colors ${
-                    activeTab === 'upload' ? 'bg-red-600 text-white' : 'text-gray-300 hover:text-white'
+                    activeTab === 'upload-movie' ? 'bg-red-600 text-white' : 'text-gray-300 hover:text-white'
                   }`}
                 >
-                  <Upload size={20} />
+                  <Film size={20} />
                   Upload Movie
+                </button>
+                <button
+                  onClick={() => setActiveTab('upload-anime')}
+                  className={`flex items-center gap-2 px-4 py-2 rounded transition-colors ${
+                    activeTab === 'upload-anime' ? 'bg-red-600 text-white' : 'text-gray-300 hover:text-white'
+                  }`}
+                >
+                  <Tv size={20} />
+                  Upload Anime
                 </button>
                 <button
                   onClick={() => setActiveTab('manage')}
@@ -67,7 +77,7 @@ const AdminDashboard = () => {
                   }`}
                 >
                   <List size={20} />
-                  Manage Movies
+                  Manage Content
                 </button>
               </nav>
             </div>
@@ -89,15 +99,22 @@ const AdminDashboard = () => {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {activeTab === 'upload' && (
+        {activeTab === 'upload-movie' && (
           <div>
             <h2 className="text-3xl font-bold text-white mb-8">Upload New Movie</h2>
             <MovieUploadForm />
           </div>
         )}
 
+        {activeTab === 'upload-anime' && (
+          <div>
+            <h2 className="text-3xl font-bold text-white mb-8">Upload New Anime</h2>
+            <AnimeUploadForm />
+          </div>
+        )}
+
         {activeTab === 'manage' && (
-          <MovieManager onBack={() => setActiveTab('upload')} />
+          <MovieManager onBack={() => setActiveTab('upload-movie')} />
         )}
       </main>
     </div>
