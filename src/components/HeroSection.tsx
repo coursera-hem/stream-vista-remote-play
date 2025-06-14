@@ -1,6 +1,6 @@
-
 import React from 'react';
 import { Play, Info, Plus, Check } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../hooks/use-toast';
 
@@ -39,14 +39,11 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
 }) => {
   const { currentUser } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const handlePlayClick = () => {
     if (!currentUser) {
-      toast({
-        title: "Sign In Required",
-        description: "Please sign in to watch movies",
-        variant: "destructive"
-      });
+      navigate('/signin');
       return;
     }
     onPlay(featuredMovie);

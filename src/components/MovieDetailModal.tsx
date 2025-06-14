@@ -1,6 +1,6 @@
-
 import React, { useEffect } from 'react';
 import { X, Play, Plus, Check, Star } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../hooks/use-toast';
 
@@ -41,6 +41,7 @@ export const MovieDetailModal: React.FC<MovieDetailModalProps> = ({
 }) => {
   const { currentUser } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
@@ -62,11 +63,7 @@ export const MovieDetailModal: React.FC<MovieDetailModalProps> = ({
 
   const handlePlayClick = () => {
     if (!currentUser) {
-      toast({
-        title: "Sign In Required",
-        description: "Please sign in to watch movies",
-        variant: "destructive"
-      });
+      navigate('/signin');
       return;
     }
     onPlay(movie!);
