@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { collection, query, where, getDocs, or } from 'firebase/firestore';
+import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { Episode } from '../types/Episode';
 
@@ -24,6 +24,7 @@ interface SeriesModalProps {
 
 export const SeriesModal: React.FC<SeriesModalProps> = ({ series, onClose }) => {
   const [episodes, setEpisodes] = useState<Episode[]>([]);
+  const [loading, setLoading] = useState(false);
 
   // Fetch episodes for selected series
   useEffect(() => {
@@ -33,31 +34,80 @@ export const SeriesModal: React.FC<SeriesModalProps> = ({ series, onClose }) => 
         return;
       }
 
+      setLoading(true);
+      console.log('=== FETCHING EPISODES FOR SERIES ===');
+      console.log('Series ID:', series.id);
+      console.log('Series Title:', series.title);
+
       try {
-        console.log('Fetching episodes for series:', series.id);
+        // First, let's check what episodes exist in the database
+        console.log('Step 1: Checking all episodes in database...');
+        const allEpisodesQuery = query(collection(db, 'episodes'));
+        const allEpisodesSnapshot = await getDocs(allEpisodesQuery);
+        console.log('Total episodes in database:', allEpisodesSnapshot.docs.length);
         
-        // Try both seriesId and animeId fields to handle different episode storage formats
-        const episodesQuery = query(
-          collection(db, 'episodes'),
-          or(
-            where('seriesId', '==', series.id),
-            where('animeId', '==', series.id)
-          )
-        );
-        
-        const querySnapshot = await getDocs(episodesQuery);
-        console.log('Episodes query results:', querySnapshot.docs.length);
-        
-        const episodesData = querySnapshot.docs.map(doc => {
+        allEpisodesSnapshot.docs.forEach(doc => {
           const data = doc.data();
-          console.log('Episode data:', { id: doc.id, ...data });
-          return {
+          console.log('Episode found:', {
             id: doc.id,
-            ...data
-          };
-        }) as Episode[];
+            seriesId: data.seriesId,
+            animeId: data.animeId,
+            title: data.title,
+            episodeNumber: data.episodeNumber
+          });
+        });
+
+        // Try multiple query strategies
+        let episodesData: Episode[] = [];
+
+        // Strategy 1: Query by seriesId
+        console.log('Step 2: Querying by seriesId =', series.id);
+        const seriesQuery = query(
+          collection(db, 'episodes'),
+          where('seriesId', '==', series.id)
+        );
+        const seriesSnapshot = await getDocs(seriesQuery);
+        console.log('Episodes found with seriesId query:', seriesSnapshot.docs.length);
         
-        console.log('Total episodes fetched:', episodesData.length);
+        if (seriesSnapshot.docs.length > 0) {
+          episodesData = seriesSnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          })) as Episode[];
+        } else {
+          // Strategy 2: Query by animeId (in case series are stored as anime)
+          console.log('Step 3: Querying by animeId =', series.id);
+          const animeQuery = query(
+            collection(db, 'episodes'),
+            where('animeId', '==', series.id)
+          );
+          const animeSnapshot = await getDocs(animeQuery);
+          console.log('Episodes found with animeId query:', animeSnapshot.docs.length);
+          
+          if (animeSnapshot.docs.length > 0) {
+            episodesData = animeSnapshot.docs.map(doc => ({
+              id: doc.id,
+              ...doc.data()
+            })) as Episode[];
+          } else {
+            // Strategy 3: Try searching by series title (as a last resort)
+            console.log('Step 4: No episodes found with ID queries, checking if any episodes reference this series by title...');
+            const titleMatchEpisodes = allEpisodesSnapshot.docs.filter(doc => {
+              const data = doc.data();
+              return data.seriesTitle === series.title || data.animeTitle === series.title;
+            });
+            
+            if (titleMatchEpisodes.length > 0) {
+              console.log('Episodes found by title match:', titleMatchEpisodes.length);
+              episodesData = titleMatchEpisodes.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+              })) as Episode[];
+            }
+          }
+        }
+
+        console.log('Final episodes data:', episodesData);
         setEpisodes(episodesData.sort((a, b) => a.episodeNumber - b.episodeNumber));
       } catch (error) {
         console.error('Error fetching episodes:', error);
@@ -66,43 +116,8 @@ export const SeriesModal: React.FC<SeriesModalProps> = ({ series, onClose }) => 
           code: error.code,
           selectedSeriesId: series.id
         });
-        
-        // Fallback: try a simpler query if the compound query fails
-        try {
-          console.log('Trying fallback query with seriesId only...');
-          const fallbackQuery = query(
-            collection(db, 'episodes'),
-            where('seriesId', '==', series.id)
-          );
-          const fallbackSnapshot = await getDocs(fallbackQuery);
-          console.log('Fallback query results:', fallbackSnapshot.docs.length);
-          
-          if (fallbackSnapshot.docs.length === 0) {
-            console.log('Trying fallback query with animeId...');
-            const animeQuery = query(
-              collection(db, 'episodes'),
-              where('animeId', '==', series.id)
-            );
-            const animeSnapshot = await getDocs(animeQuery);
-            console.log('AnimeId query results:', animeSnapshot.docs.length);
-            
-            const episodesData = animeSnapshot.docs.map(doc => ({
-              id: doc.id,
-              ...doc.data()
-            })) as Episode[];
-            
-            setEpisodes(episodesData.sort((a, b) => a.episodeNumber - b.episodeNumber));
-          } else {
-            const episodesData = fallbackSnapshot.docs.map(doc => ({
-              id: doc.id,
-              ...doc.data()
-            })) as Episode[];
-            
-            setEpisodes(episodesData.sort((a, b) => a.episodeNumber - b.episodeNumber));
-          }
-        } catch (fallbackError) {
-          console.error('Fallback query also failed:', fallbackError);
-        }
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -140,12 +155,20 @@ export const SeriesModal: React.FC<SeriesModalProps> = ({ series, onClose }) => 
             <p className="text-gray-400">
               <span className="text-white font-semibold">Status:</span> {series.status}
             </p>
+            <p className="text-gray-400">
+              <span className="text-white font-semibold">Series ID:</span> {series.id}
+            </p>
           </div>
 
           <div>
             <h3 className="text-xl font-bold text-white mb-4">Episodes</h3>
-            {episodes.length === 0 ? (
-              <p className="text-gray-400">No episodes available yet.</p>
+            {loading ? (
+              <p className="text-gray-400">Loading episodes...</p>
+            ) : episodes.length === 0 ? (
+              <div className="text-gray-400">
+                <p>No episodes available yet.</p>
+                <p className="text-sm mt-2">Debug info: Check console for detailed episode search results.</p>
+              </div>
             ) : (
               <div className="space-y-2">
                 {episodes.map((episode) => (
