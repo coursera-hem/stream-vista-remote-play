@@ -9,7 +9,7 @@ import { MovieUploadForm } from '../components/MovieUploadForm';
 import { AnimeUploadForm } from '../components/AnimeUploadForm';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { Button } from '../components/ui/button';
-import { ArrowLeft, Film, Tv, Upload, Plus } from 'lucide-react';
+import { ArrowLeft, Film, Tv, PlaySquare, Upload, Plus } from 'lucide-react';
 import { useToast } from '../hooks/use-toast';
 
 const AdminDashboard = () => {
@@ -130,7 +130,7 @@ const AdminDashboard = () => {
               className="border-gray-600 text-white hover:bg-gray-800"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Series
+              Back to Anime
             </Button>
             <h1 className="text-3xl font-bold">
               Manage Episodes - {selectedAnime.title}
@@ -203,11 +203,11 @@ const AdminDashboard = () => {
               Anime
             </TabsTrigger>
             <TabsTrigger 
-              value="series" 
+              value="episodes" 
               className="data-[state=active]:bg-red-600 data-[state=active]:text-white flex items-center gap-2"
             >
-              <Tv className="w-4 h-4" />
-              Series
+              <PlaySquare className="w-4 h-4" />
+              Episodes
             </TabsTrigger>
           </TabsList>
 
@@ -237,14 +237,14 @@ const AdminDashboard = () => {
             </div>
           </TabsContent>
 
-          <TabsContent value="series" className="mt-6">
+          <TabsContent value="episodes" className="mt-6">
             <div className="bg-gray-900 rounded-lg p-6 border border-gray-700">
               <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-                <Tv className="w-6 h-6 text-red-600" />
-                Series Management
+                <PlaySquare className="w-6 h-6 text-red-600" />
+                Episode Management
               </h2>
               <p className="text-gray-400 mb-6">
-                Manage anime series and their episodes. Select a series to view and manage its episodes.
+                Select an anime from the Anime tab to manage its episodes, or use the quick episode management below.
               </p>
               {selectedAnime ? (
                 <EpisodeManager 
@@ -253,17 +253,14 @@ const AdminDashboard = () => {
                   onBack={handleBackToAnime} 
                 />
               ) : (
-                <div>
-                  <AnimeManager onBack={() => navigate('/')} onManageEpisodes={handleManageEpisodes} />
-                  <div className="text-center py-8 mt-8 border-t border-gray-700">
-                    <Tv className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-                    <p className="text-gray-400 text-lg">
-                      No series selected for episode management
-                    </p>
-                    <p className="text-gray-500 text-sm mt-2">
-                      Click "Manage Episodes" on any anime series above to manage its episodes
-                    </p>
-                  </div>
+                <div className="text-center py-12">
+                  <PlaySquare className="w-16 h-16 text-gray-600 mx-auto mb-4" />
+                  <p className="text-gray-400 text-lg">
+                    No anime selected for episode management
+                  </p>
+                  <p className="text-gray-500 text-sm mt-2">
+                    Go to the Anime tab and click "Manage Episodes" on any anime series
+                  </p>
                 </div>
               )}
             </div>
