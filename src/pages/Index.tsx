@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { collection, getDocs, query, orderBy } from 'firebase/firestore';
 import { db } from '../config/firebase';
@@ -395,9 +396,9 @@ const Index = () => {
 
         {/* Movie Carousels */}
         <div className="relative -mt-32 z-10 space-y-8 pb-20">
-          {/* Recently Watched - Now comes first with extra padding */}
+          {/* Recently Watched - with left padding and reduced top padding */}
           {recentlyWatched.length > 0 && (
-            <div className="pt-16">
+            <div className="pt-8 pl-8">
               <MovieCarousel
                 title="Recently Watched"
                 movies={recentlyWatched}
