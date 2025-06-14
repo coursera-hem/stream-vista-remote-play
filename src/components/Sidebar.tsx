@@ -109,13 +109,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ onLogout, isLoggedIn, onLogin 
                       setIsOpen(false);
                     }}
                     className={`
-                      w-full flex flex-col items-center gap-1 px-4 py-3 rounded-lg transition-colors text-center
+                      w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-left
                       ${isActive ? 'bg-red-600 text-white' : 'text-gray-300 hover:bg-gray-800 hover:text-white'}
                       ${isFocused ? 'ring-2 ring-red-500 bg-gray-800' : ''}
                     `}
                   >
                     <Icon size={20} />
-                    <span className="text-xs font-medium">{item.label}</span>
+                    <span className="text-sm font-medium">{item.label}</span>
                   </button>
                 </li>
               );
