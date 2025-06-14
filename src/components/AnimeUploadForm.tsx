@@ -6,7 +6,7 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Textarea } from './ui/textarea';
-import { Upload, Link as LinkIcon, Video, FileVideo, Plus, Image as ImageIcon } from 'lucide-react';
+import { Upload, Link as LinkIcon, Video, FileVideo, Plus, Image as ImageIcon, ArrowRight, Check } from 'lucide-react';
 import { useToast } from '../hooks/use-toast';
 import { EpisodeForm, EpisodeFormData } from './EpisodeForm';
 
@@ -28,7 +28,11 @@ interface AnimeData {
   type: 'anime';
 }
 
+type UploadStep = 'details' | 'episodes' | 'complete';
+
 export const AnimeUploadForm = () => {
+  const [currentStep, setCurrentStep] = useState<UploadStep>('details');
+  const [animeId, setAnimeId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -404,33 +408,10 @@ export const AnimeUploadForm = () => {
     }
   };
 
-  const saveEpisodesToFirebase = async (animeId: string) => {
-    if (episodesList.length === 0) return;
-
-    const episodePromises = episodesList.map(async (episode) => {
-      const episodeData = {
-        animeId,
-        episodeNumber: episode.episodeNumber,
-        title: episode.title,
-        description: episode.description,
-        videoUrl: episode.videoUrl,
-        thumbnail: episode.thumbnail,
-        duration: episode.duration,
-        views: 0,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
-      };
-
-      return addDoc(collection(db, 'episodes'), episodeData);
-    });
-
-    await Promise.all(episodePromises);
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleAnimeDetailsSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    console.log('Form submission started');
+    console.log('Anime details submission started');
     console.log('Current form data:', formData);
     
     if (!formData.driveLink) {
@@ -451,19 +432,6 @@ export const AnimeUploadForm = () => {
       return;
     }
 
-    // Validate episodes if any are added
-    if (episodesList.length > 0) {
-      const invalidEpisodes = episodesList.filter(ep => !ep.title.trim() || !ep.videoUrl.trim());
-      if (invalidEpisodes.length > 0) {
-        toast({
-          title: "Error",
-          description: "All episodes must have a title and video URL",
-          variant: "destructive"
-        });
-        return;
-      }
-    }
-
     setLoading(true);
 
     try {
@@ -474,7 +442,7 @@ export const AnimeUploadForm = () => {
         description: formData.description,
         genre: formData.genre,
         releaseYear: formData.releaseYear,
-        episodes: Math.max(formData.episodes, episodesList.length),
+        episodes: formData.episodes,
         status: formData.status,
         poster: formData.poster,
         videoUrl: videoUrl,
@@ -489,47 +457,20 @@ export const AnimeUploadForm = () => {
 
       console.log('Saving anime data to database:', animeData);
       const animeDoc = await addDoc(collection(db, 'animes'), animeData);
+      setAnimeId(animeDoc.id);
 
-      // Save episodes if any
-      if (episodesList.length > 0) {
-        await saveEpisodesToFirebase(animeDoc.id);
-        toast({
-          title: "Success",
-          description: `Anime and ${episodesList.length} episodes uploaded successfully!`
-        });
-      } else {
-        toast({
-          title: "Success",
-          description: "Anime uploaded successfully!"
-        });
-      }
-
-      // Reset form
-      setFormData({
-        title: '',
-        description: '',
-        genre: 'Action',
-        releaseYear: new Date().getFullYear(),
-        episodes: 1,
-        status: 'Completed',
-        driveLink: '',
-        poster: '',
-        rating: 8.0,
-        language: 'Japanese',
-        isTrending: false,
-        isFeatured: false
+      toast({
+        title: "Success",
+        description: "Anime details saved successfully! You can now add episodes."
       });
-      setEpisodesList([]);
-      setVideoFile(null);
-      setPosterFile(null);
-      setUploadMethod('drive');
-      setPosterUploadMethod('url');
+
+      setCurrentStep('episodes');
 
     } catch (error: any) {
       console.error('Error uploading anime:', error);
       toast({
         title: "Error",
-        description: error.message || 'Failed to upload anime',
+        description: error.message || 'Failed to save anime details',
         variant: "destructive"
       });
     } finally {
@@ -537,9 +478,184 @@ export const AnimeUploadForm = () => {
     }
   };
 
+  const handleCompleteUpload = () => {
+    setCurrentStep('complete');
+    toast({
+      title: "Upload Complete",
+      description: "Anime has been successfully uploaded to the platform!"
+    });
+  };
+
+  const handleStartOver = () => {
+    setCurrentStep('details');
+    setAnimeId(null);
+    setFormData({
+      title: '',
+      description: '',
+      genre: 'Action',
+      releaseYear: new Date().getFullYear(),
+      episodes: 1,
+      status: 'Completed',
+      driveLink: '',
+      poster: '',
+      rating: 8.0,
+      language: 'Japanese',
+      isTrending: false,
+      isFeatured: false
+    });
+    setVideoFile(null);
+    setPosterFile(null);
+    setUploadMethod('drive');
+    setPosterUploadMethod('url');
+  };
+
+  // Step indicator component
+  const StepIndicator = () => (
+    <div className="flex items-center justify-center mb-8">
+      <div className="flex items-center space-x-4">
+        <div className={`flex items-center justify-center w-8 h-8 rounded-full ${
+          currentStep === 'details' ? 'bg-red-600 text-white' : 
+          currentStep === 'episodes' || currentStep === 'complete' ? 'bg-green-600 text-white' : 
+          'bg-gray-600 text-gray-300'
+        }`}>
+          {currentStep === 'episodes' || currentStep === 'complete' ? <Check size={16} /> : '1'}
+        </div>
+        <span className={`text-sm ${currentStep === 'details' ? 'text-red-400' : 'text-gray-400'}`}>
+          Anime Details
+        </span>
+        
+        <div className={`w-12 h-0.5 ${currentStep === 'episodes' || currentStep === 'complete' ? 'bg-green-600' : 'bg-gray-600'}`} />
+        
+        <div className={`flex items-center justify-center w-8 h-8 rounded-full ${
+          currentStep === 'episodes' ? 'bg-red-600 text-white' : 
+          currentStep === 'complete' ? 'bg-green-600 text-white' : 
+          'bg-gray-600 text-gray-300'
+        }`}>
+          {currentStep === 'complete' ? <Check size={16} /> : '2'}
+        </div>
+        <span className={`text-sm ${currentStep === 'episodes' ? 'text-red-400' : 'text-gray-400'}`}>
+          Add Episodes
+        </span>
+        
+        <div className={`w-12 h-0.5 ${currentStep === 'complete' ? 'bg-green-600' : 'bg-gray-600'}`} />
+        
+        <div className={`flex items-center justify-center w-8 h-8 rounded-full ${
+          currentStep === 'complete' ? 'bg-green-600 text-white' : 'bg-gray-600 text-gray-300'
+        }`}>
+          {currentStep === 'complete' ? <Check size={16} /> : '3'}
+        </div>
+        <span className={`text-sm ${currentStep === 'complete' ? 'text-green-400' : 'text-gray-400'}`}>
+          Complete
+        </span>
+      </div>
+    </div>
+  );
+
+  if (currentStep === 'episodes') {
+    return (
+      <div className="max-w-2xl mx-auto">
+        <div className="bg-gray-900 rounded-lg p-6">
+          <StepIndicator />
+          
+          <div className="text-center mb-6">
+            <h2 className="text-2xl font-bold text-white mb-2">Add Episodes</h2>
+            <p className="text-gray-400">
+              Now you can add episodes for "{formData.title}". Episodes are optional - you can add them later.
+            </p>
+          </div>
+
+          <div className="bg-gray-800 rounded-lg p-4 mb-6 border border-gray-600">
+            <h3 className="text-white font-medium mb-2">Anime Details Saved:</h3>
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <span className="text-gray-400">Title:</span>
+                <span className="text-white ml-2">{formData.title}</span>
+              </div>
+              <div>
+                <span className="text-gray-400">Genre:</span>
+                <span className="text-white ml-2">{formData.genre}</span>
+              </div>
+              <div>
+                <span className="text-gray-400">Episodes:</span>
+                <span className="text-white ml-2">{formData.episodes}</span>
+              </div>
+              <div>
+                <span className="text-gray-400">Status:</span>
+                <span className="text-white ml-2">{formData.status}</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="text-center space-y-4">
+            <p className="text-gray-300 mb-6">
+              You can now manage episodes for this anime from the Admin Dashboard's Episode Management section.
+            </p>
+            
+            <div className="flex gap-4 justify-center">
+              <Button
+                onClick={handleCompleteUpload}
+                className="bg-green-600 hover:bg-green-700 flex items-center gap-2"
+              >
+                <Check size={16} />
+                Complete Upload
+              </Button>
+              
+              <Button
+                onClick={handleStartOver}
+                variant="outline"
+                className="border-gray-600 text-gray-400 hover:text-white hover:border-white"
+              >
+                Upload Another Anime
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (currentStep === 'complete') {
+    return (
+      <div className="max-w-2xl mx-auto">
+        <div className="bg-gray-900 rounded-lg p-6">
+          <StepIndicator />
+          
+          <div className="text-center space-y-6">
+            <div className="w-16 h-16 bg-green-600 rounded-full flex items-center justify-center mx-auto">
+              <Check size={32} className="text-white" />
+            </div>
+            
+            <div>
+              <h2 className="text-2xl font-bold text-white mb-2">Upload Complete!</h2>
+              <p className="text-gray-400">
+                "{formData.title}" has been successfully uploaded to the platform.
+              </p>
+            </div>
+            
+            <div className="bg-gray-800 rounded-lg p-4 border border-gray-600">
+              <p className="text-gray-300 text-sm">
+                To add episodes to this anime, go to the Admin Dashboard → Episode Management tab and select this anime.
+              </p>
+            </div>
+            
+            <Button
+              onClick={handleStartOver}
+              className="bg-red-600 hover:bg-red-700 flex items-center gap-2"
+            >
+              <Plus size={16} />
+              Upload Another Anime
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-2xl mx-auto">
       <div className="bg-gray-900 rounded-lg p-6">
+        <StepIndicator />
+        
         {/* Enhanced Debug Information */}
         <div className="mb-6 p-4 bg-gray-800 border border-gray-600 text-gray-300 rounded text-xs">
           <div className="grid grid-cols-2 gap-4">
@@ -557,7 +673,6 @@ export const AnimeUploadForm = () => {
           <div className="mt-2">
             <p><strong>Poster URL:</strong> {formData.poster ? '✅ Set' : '❌ Empty'}</p>
             {formData.poster && <p className="break-all text-green-400">{formData.poster}</p>}
-            <p><strong>Episodes Count:</strong> {episodesList.length}</p>
           </div>
         </div>
 
@@ -595,7 +710,14 @@ export const AnimeUploadForm = () => {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="text-center mb-6">
+          <h2 className="text-2xl font-bold text-white mb-2">Anime Details</h2>
+          <p className="text-gray-400">
+            Fill in all the anime information first, then you can add episodes in the next step.
+          </p>
+        </div>
+
+        <form onSubmit={handleAnimeDetailsSubmit} className="space-y-6">
           <div>
             <Label htmlFor="title" className="text-white">Anime Title *</Label>
             <Input
@@ -913,12 +1035,6 @@ export const AnimeUploadForm = () => {
             </div>
           </div>
 
-          {/* Add Episodes Section */}
-          <EpisodeForm
-            episodes={episodesList}
-            onChange={setEpisodesList}
-          />
-
           {/* Flags */}
           <div className="space-y-4">
             <div className="flex items-center space-x-3">
@@ -954,15 +1070,15 @@ export const AnimeUploadForm = () => {
             className="w-full bg-red-600 hover:bg-red-700 flex items-center justify-center gap-2"
           >
             {loading ? (
-              'Adding Anime...'
+              'Saving Anime Details...'
             ) : uploading ? (
               'Uploading Video...'
             ) : posterUploading ? (
               'Uploading Poster...'
             ) : (
               <>
-                <Plus size={20} />
-                Add Anime
+                <ArrowRight size={20} />
+                Save Details & Continue to Episodes
               </>
             )}
           </Button>
