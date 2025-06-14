@@ -17,8 +17,10 @@ const AdminDashboard = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [selectedAnime, setSelectedAnime] = useState<{ id: string; title: string } | null>(null);
+  const [selectedSeries, setSelectedSeries] = useState<{ id: string; title: string } | null>(null);
   const [showMovieUpload, setShowMovieUpload] = useState(false);
   const [showAnimeUpload, setShowAnimeUpload] = useState(false);
+  const [showSeriesUpload, setShowSeriesUpload] = useState(false);
 
   useEffect(() => {
     if (!currentUser) {
@@ -42,20 +44,39 @@ const AdminDashboard = () => {
     setSelectedAnime({ id: animeId, title: animeTitle });
   };
 
+  const handleManageSeriesEpisodes = (seriesId: string, seriesTitle: string) => {
+    console.log('Managing episodes for series:', { seriesId, seriesTitle });
+    setSelectedSeries({ id: seriesId, title: seriesTitle });
+  };
+
   const handleBackToAnime = () => {
     setSelectedAnime(null);
+  };
+
+  const handleBackToSeries = () => {
+    setSelectedSeries(null);
   };
 
   const handleBackToDashboard = () => {
     setShowMovieUpload(false);
     setShowAnimeUpload(false);
+    setShowSeriesUpload(false);
     setSelectedAnime(null);
+    setSelectedSeries(null);
   };
 
   const handleAnimeUploadSuccess = () => {
     toast({
       title: "Success",
       description: "Anime uploaded successfully!"
+    });
+    handleBackToDashboard();
+  };
+
+  const handleSeriesUploadSuccess = () => {
+    toast({
+      title: "Success",
+      description: "Series uploaded successfully!"
     });
     handleBackToDashboard();
   };
@@ -118,6 +139,31 @@ const AdminDashboard = () => {
     );
   }
 
+  // Show Series Upload Form
+  if (showSeriesUpload) {
+    return (
+      <div className="min-h-screen bg-black text-white">
+        <div className="container mx-auto px-4 py-8">
+          <div className="flex items-center gap-4 mb-8">
+            <Button
+              onClick={handleBackToDashboard}
+              variant="outline"
+              size="sm"
+              className="border-gray-600 text-white hover:bg-gray-800"
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to Dashboard
+            </Button>
+            <h1 className="text-3xl font-bold">Upload New Series</h1>
+          </div>
+          <div className="bg-gray-900 rounded-lg p-6 border border-gray-700">
+            <AnimeUploadForm />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (selectedAnime) {
     return (
       <div className="min-h-screen bg-black text-white">
@@ -140,6 +186,34 @@ const AdminDashboard = () => {
             animeId={selectedAnime.id} 
             animeTitle={selectedAnime.title}
             onBack={handleBackToAnime} 
+          />
+        </div>
+      </div>
+    );
+  }
+
+  if (selectedSeries) {
+    return (
+      <div className="min-h-screen bg-black text-white">
+        <div className="container mx-auto px-4 py-8">
+          <div className="flex items-center gap-4 mb-8">
+            <Button
+              onClick={handleBackToSeries}
+              variant="outline"
+              size="sm"
+              className="border-gray-600 text-white hover:bg-gray-800"
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to Series
+            </Button>
+            <h1 className="text-3xl font-bold">
+              Manage Episodes - {selectedSeries.title}
+            </h1>
+          </div>
+          <EpisodeManager 
+            animeId={selectedSeries.id} 
+            animeTitle={selectedSeries.title}
+            onBack={handleBackToSeries} 
           />
         </div>
       </div>
@@ -169,13 +243,20 @@ const AdminDashboard = () => {
         </div>
 
         {/* Quick Action Buttons */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-3 gap-4 mb-8">
           <Button
             onClick={() => setShowMovieUpload(true)}
             className="bg-red-600 hover:bg-red-700 h-16 text-lg flex items-center justify-center gap-3"
           >
             <Upload className="w-6 h-6" />
             Upload Movie
+          </Button>
+          <Button
+            onClick={() => setShowSeriesUpload(true)}
+            className="bg-green-600 hover:bg-green-700 h-16 text-lg flex items-center justify-center gap-3"
+          >
+            <Plus className="w-6 h-6" />
+            Upload Series
           </Button>
           <Button
             onClick={() => setShowAnimeUpload(true)}
@@ -203,11 +284,11 @@ const AdminDashboard = () => {
               Anime
             </TabsTrigger>
             <TabsTrigger 
-              value="episodes" 
+              value="series" 
               className="data-[state=active]:bg-red-600 data-[state=active]:text-white flex items-center gap-2"
             >
               <PlaySquare className="w-4 h-4" />
-              Episodes
+              Series
             </TabsTrigger>
           </TabsList>
 
@@ -237,29 +318,29 @@ const AdminDashboard = () => {
             </div>
           </TabsContent>
 
-          <TabsContent value="episodes" className="mt-6">
+          <TabsContent value="series" className="mt-6">
             <div className="bg-gray-900 rounded-lg p-6 border border-gray-700">
               <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
                 <PlaySquare className="w-6 h-6 text-red-600" />
-                Episode Management
+                Series Management
               </h2>
               <p className="text-gray-400 mb-6">
-                Select an anime from the Anime tab to manage its episodes, or use the quick episode management below.
+                Upload, edit, and manage TV series in your collection.
               </p>
-              {selectedAnime ? (
+              {selectedSeries ? (
                 <EpisodeManager 
-                  animeId={selectedAnime.id} 
-                  animeTitle={selectedAnime.title}
-                  onBack={handleBackToAnime} 
+                  animeId={selectedSeries.id} 
+                  animeTitle={selectedSeries.title}
+                  onBack={handleBackToSeries} 
                 />
               ) : (
                 <div className="text-center py-12">
                   <PlaySquare className="w-16 h-16 text-gray-600 mx-auto mb-4" />
                   <p className="text-gray-400 text-lg">
-                    No anime selected for episode management
+                    Series management functionality
                   </p>
                   <p className="text-gray-500 text-sm mt-2">
-                    Go to the Anime tab and click "Manage Episodes" on any anime series
+                    Series management will work similarly to anime management
                   </p>
                 </div>
               )}

@@ -15,6 +15,7 @@ import MyList from "./pages/MyList";
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 import Anime from "./pages/Anime";
+import Series from "./pages/Series";
 
 const queryClient = new QueryClient();
 
@@ -32,6 +33,7 @@ const App = () => (
               <Route path="/signup" element={<SignUp />} />
               <Route path="/admin" element={<AdminDashboard />} />
               <Route path="/movies" element={<Movies />} />
+              <Route path="/series" element={<Series />} />
               <Route path="/anime" element={<Anime />} />
               <Route path="/mylist" element={<MyList />} />
               <Route path="/profile" element={<Profile />} />
