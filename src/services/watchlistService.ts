@@ -10,64 +10,64 @@ export interface WatchlistData {
 
 export const addToWatchlist = async (userId: string, movieId: string) => {
   try {
-    const watchlistRef = doc(db, 'watchlists', userId);
-    const watchlistDoc = await getDoc(watchlistRef);
+    const myListRef = doc(db, 'mylists', userId);
+    const myListDoc = await getDoc(myListRef);
 
-    if (watchlistDoc.exists()) {
-      await updateDoc(watchlistRef, {
+    if (myListDoc.exists()) {
+      await updateDoc(myListRef, {
         movieIds: arrayUnion(movieId),
         updatedAt: new Date()
       });
     } else {
-      await setDoc(watchlistRef, {
+      await setDoc(myListRef, {
         userId,
         movieIds: [movieId],
         updatedAt: new Date()
       });
     }
-    console.log('Successfully added to watchlist:', movieId);
+    console.log('Successfully added to my list:', movieId);
   } catch (error) {
-    console.error('Error adding to watchlist:', error);
+    console.error('Error adding to my list:', error);
     throw error;
   }
 };
 
 export const removeFromWatchlist = async (userId: string, movieId: string) => {
   try {
-    const watchlistRef = doc(db, 'watchlists', userId);
-    await updateDoc(watchlistRef, {
+    const myListRef = doc(db, 'mylists', userId);
+    await updateDoc(myListRef, {
       movieIds: arrayRemove(movieId),
       updatedAt: new Date()
     });
-    console.log('Successfully removed from watchlist:', movieId);
+    console.log('Successfully removed from my list:', movieId);
   } catch (error) {
-    console.error('Error removing from watchlist:', error);
+    console.error('Error removing from my list:', error);
     throw error;
   }
 };
 
 export const getWatchlist = async (userId: string): Promise<string[]> => {
   try {
-    const watchlistRef = doc(db, 'watchlists', userId);
-    const watchlistDoc = await getDoc(watchlistRef);
+    const myListRef = doc(db, 'mylists', userId);
+    const myListDoc = await getDoc(myListRef);
     
-    if (watchlistDoc.exists()) {
-      const data = watchlistDoc.data() as WatchlistData;
-      console.log('Watchlist data retrieved:', data.movieIds);
+    if (myListDoc.exists()) {
+      const data = myListDoc.data() as WatchlistData;
+      console.log('My list data retrieved:', data.movieIds);
       return data.movieIds || [];
     }
-    console.log('No watchlist found for user:', userId);
+    console.log('No my list found for user:', userId);
     return [];
   } catch (error) {
-    console.error('Error getting watchlist:', error);
+    console.error('Error getting my list:', error);
     return [];
   }
 };
 
 export const subscribeToWatchlist = (userId: string, callback: (movieIds: string[]) => void) => {
-  const watchlistRef = doc(db, 'watchlists', userId);
+  const myListRef = doc(db, 'mylists', userId);
   
-  return onSnapshot(watchlistRef, (doc) => {
+  return onSnapshot(myListRef, (doc) => {
     if (doc.exists()) {
       const data = doc.data() as WatchlistData;
       callback(data.movieIds || []);
@@ -79,10 +79,10 @@ export const subscribeToWatchlist = (userId: string, callback: (movieIds: string
 
 export const isInWatchlist = async (userId: string, movieId: string): Promise<boolean> => {
   try {
-    const watchlist = await getWatchlist(userId);
-    return watchlist.includes(movieId);
+    const myList = await getWatchlist(userId);
+    return myList.includes(movieId);
   } catch (error) {
-    console.error('Error checking watchlist:', error);
+    console.error('Error checking my list:', error);
     return false;
   }
 };

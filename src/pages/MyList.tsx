@@ -79,15 +79,15 @@ const MyListContent = () => {
     
     fetchAllMovies();
     
-    console.log('Setting up watchlist subscription for user:', currentUser.uid);
+    console.log('Setting up my list subscription for user:', currentUser.uid);
     const unsubscribe = subscribeToWatchlist(currentUser.uid, (movieIds) => {
-      console.log('Watchlist updated:', movieIds);
+      console.log('My list updated:', movieIds);
       setWatchlist(movieIds);
       setLoading(false);
     });
 
     return () => {
-      console.log('Cleaning up watchlist subscription');
+      console.log('Cleaning up my list subscription');
       unsubscribe();
     };
   }, [currentUser, navigate]);
