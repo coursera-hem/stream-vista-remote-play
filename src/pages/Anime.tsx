@@ -6,6 +6,7 @@ import { Sidebar } from '../components/Sidebar';
 import { SearchModal } from '../components/SearchModal';
 import { LoginModal } from '../components/LoginModal';
 import { AnimeCard } from '../components/AnimeCard';
+import { AnimeEpisodeModal } from '../components/AnimeEpisodeModal';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
@@ -29,6 +30,8 @@ interface FirebaseAnime {
 const Anime = () => {
   const [showSearchModal, setShowSearchModal] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const [showEpisodeModal, setShowEpisodeModal] = useState(false);
+  const [selectedAnime, setSelectedAnime] = useState<FirebaseAnime | null>(null);
   const [animes, setAnimes] = useState<FirebaseAnime[]>([]);
   const [loading, setLoading] = useState(true);
   const { currentUser, logout } = useAuth();
@@ -69,6 +72,18 @@ const Anime = () => {
   const handleAnimePlay = (anime: FirebaseAnime) => {
     console.log('Playing anime:', anime.title);
     // You can implement video player modal here
+  };
+
+  const handleAnimeCardClick = (anime: FirebaseAnime) => {
+    setSelectedAnime(anime);
+    setShowEpisodeModal(true);
+  };
+
+  const handleEpisodePlay = (episodeNumber: number) => {
+    console.log(`Playing episode ${episodeNumber} of ${selectedAnime?.title}`);
+    // Here you can implement the logic to play the specific episode
+    // For example, redirect to a video player with the episode URL
+    setShowEpisodeModal(false);
   };
 
   if (loading) {
@@ -127,6 +142,7 @@ const Anime = () => {
                   rating={anime.rating}
                   description={anime.description}
                   onPlay={() => handleAnimePlay(anime)}
+                  onEpisodeSelect={() => handleAnimeCardClick(anime)}
                 />
               ))}
             </div>
@@ -146,6 +162,15 @@ const Anime = () => {
         onClose={() => setShowLoginModal(false)}
         onLogin={() => navigate('/signin')}
         onRegister={() => navigate('/signup')}
+      />
+
+      <AnimeEpisodeModal
+        isOpen={showEpisodeModal}
+        onClose={() => setShowEpisodeModal(false)}
+        animeTitle={selectedAnime?.title || ''}
+        totalEpisodes={selectedAnime?.episodes || 0}
+        animePoster={selectedAnime?.poster || ''}
+        onEpisodePlay={handleEpisodePlay}
       />
     </div>
   );

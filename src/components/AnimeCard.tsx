@@ -13,6 +13,7 @@ interface AnimeCardProps {
   rating: number;
   description: string;
   onPlay?: () => void;
+  onEpisodeSelect?: (episodeNumber: number) => void;
 }
 
 export const AnimeCard: React.FC<AnimeCardProps> = ({
@@ -24,7 +25,8 @@ export const AnimeCard: React.FC<AnimeCardProps> = ({
   status,
   rating,
   description,
-  onPlay
+  onPlay,
+  onEpisodeSelect
 }) => {
   const [imageError, setImageError] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
@@ -40,8 +42,25 @@ export const AnimeCard: React.FC<AnimeCardProps> = ({
     setImageLoaded(true);
   };
 
+  const handleCardClick = () => {
+    // When card is clicked, trigger episode selection with episode 1 as default
+    if (onEpisodeSelect) {
+      onEpisodeSelect(1);
+    }
+  };
+
+  const handlePlayClick = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent card click when play button is clicked
+    if (onPlay) {
+      onPlay();
+    }
+  };
+
   return (
-    <div className="bg-gray-800 rounded-lg overflow-hidden hover:scale-105 transition-transform duration-300 group">
+    <div 
+      className="bg-gray-800 rounded-lg overflow-hidden hover:scale-105 transition-transform duration-300 group cursor-pointer"
+      onClick={handleCardClick}
+    >
       <div className="relative">
         {imageError ? (
           <div className="w-full h-64 bg-gray-700 flex items-center justify-center">
@@ -69,7 +88,7 @@ export const AnimeCard: React.FC<AnimeCardProps> = ({
         
         <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-opacity duration-300 flex items-center justify-center">
           <button
-            onClick={onPlay}
+            onClick={handlePlayClick}
             className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-red-600 text-white rounded-full p-3 hover:bg-red-700"
           >
             <Play size={24} fill="white" />
