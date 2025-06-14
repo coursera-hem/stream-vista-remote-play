@@ -1,7 +1,7 @@
+
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { Navigation } from '../components/Navigation';
 import { Sidebar } from '../components/Sidebar';
 import { Button } from '../components/ui/button';
 import { FilePlus, Users, PlaySquare, Tv, Film } from 'lucide-react';
@@ -97,23 +97,15 @@ const AdminDashboard = () => {
   if (managingEpisodes) {
     return (
       <div className="min-h-screen bg-black text-white">
-        <Navigation
-          onSearch={() => {}}
-          onLogin={handleLogin}
-          isLoggedIn={!!currentUser}
-          onLogout={handleLogout}
-          currentUser={userData ? { name: userData.name, email: userData.email } : undefined}
-        />
-        
         <Sidebar
           onLogout={handleLogout}
           isLoggedIn={!!currentUser}
           onLogin={handleLogin}
         />
 
-        <div className="pt-20 px-6">
+        <div className="px-6">
           <div className="max-w-7xl mx-auto">
-            <div className="flex items-center gap-4 mb-6">
+            <div className="flex items-center gap-4 mb-6 pt-6">
               <Button
                 onClick={() => setManagingEpisodes(null)}
                 variant="outline"
@@ -146,23 +138,15 @@ const AdminDashboard = () => {
 
   return (
     <div className="min-h-screen bg-black text-white">
-      <Navigation
-        onSearch={() => {}}
-        onLogin={handleLogin}
-        isLoggedIn={!!currentUser}
-        onLogout={handleLogout}
-        currentUser={userData ? { name: userData.name, email: userData.email } : undefined}
-      />
-      
       <Sidebar
         onLogout={handleLogout}
         isLoggedIn={!!currentUser}
         onLogin={handleLogin}
       />
 
-      <div className="pt-20 px-6">
+      <div className="px-6">
         <div className="max-w-7xl mx-auto">
-          <h1 className="text-4xl font-bold text-white mb-8">Admin Dashboard</h1>
+          <h1 className="text-4xl font-bold text-white mb-8 pt-6">Admin Dashboard</h1>
           
           {activeSection === 'dashboard' && (
             <div className="space-y-6">
