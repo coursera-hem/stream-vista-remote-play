@@ -60,50 +60,51 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
       <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-transparent to-transparent" />
       
       {/* Content */}
-      <div className="relative z-10 max-w-2xl px-8 text-white">
-        <h1 className="text-6xl font-bold mb-4 leading-tight">
+      <div className="relative z-10 w-full max-w-2xl px-4 sm:px-6 md:px-8 text-white">
+        <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-3 sm:mb-4 leading-tight">
           {featuredMovie.title}
         </h1>
         
-        <div className="flex items-center gap-4 mb-6 text-lg">
-          <span className="bg-red-600 px-3 py-1 rounded text-sm font-semibold">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3 md:gap-4 mb-4 sm:mb-5 md:mb-6 text-sm sm:text-base md:text-lg">
+          <span className="bg-red-600 px-2 sm:px-3 py-1 rounded text-xs sm:text-sm font-semibold">
             {featuredMovie.year}
           </span>
-          <span>{featuredMovie.genre}</span>
+          <span className="truncate">{featuredMovie.genre}</span>
           <span>⭐ {featuredMovie.rating}</span>
-          <span>{featuredMovie.duration}</span>
+          <span className="hidden sm:inline">{featuredMovie.duration}</span>
         </div>
         
-        <p className="text-xl mb-8 leading-relaxed opacity-90">
+        <p className="text-sm sm:text-base md:text-lg lg:text-xl mb-6 sm:mb-7 md:mb-8 leading-relaxed opacity-90 line-clamp-3 sm:line-clamp-none">
           {featuredMovie.description || 'No description available'}
         </p>
         
         {/* Action buttons */}
-        <div className="flex gap-4">
+        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
           <button
             onClick={handlePlayClick}
-            className="flex items-center gap-3 bg-white text-black px-8 py-4 rounded-lg font-semibold text-lg hover:bg-gray-200 transition-colors"
+            className="flex items-center justify-center gap-2 sm:gap-3 bg-white text-black px-6 sm:px-8 py-3 sm:py-4 rounded-lg font-semibold text-base sm:text-lg hover:bg-gray-200 transition-colors w-full sm:w-auto"
           >
-            <Play className="w-6 h-6 fill-current" />
-            {currentUser ? 'Play' : 'Sign In to Play'}
+            <Play className="w-5 h-5 sm:w-6 sm:h-6 fill-current" />
+            <span className="sm:hidden">{currentUser ? 'Play' : 'Sign In'}</span>
+            <span className="hidden sm:inline">{currentUser ? 'Play' : 'Sign In to Play'}</span>
           </button>
           
           <button
             onClick={() => onMoreInfo(featuredMovie)}
-            className="flex items-center gap-3 bg-gray-600/80 text-white px-8 py-4 rounded-lg font-semibold text-lg hover:bg-gray-600 transition-colors"
+            className="flex items-center justify-center gap-2 sm:gap-3 bg-gray-600/80 text-white px-6 sm:px-8 py-3 sm:py-4 rounded-lg font-semibold text-base sm:text-lg hover:bg-gray-600 transition-colors w-full sm:w-auto"
           >
-            <Info className="w-6 h-6" />
+            <Info className="w-5 h-5 sm:w-6 sm:h-6" />
             More Info
           </button>
           
           <button
             onClick={() => onToggleWatchlist?.(featuredMovie.id)}
-            className="flex items-center justify-center w-14 h-14 bg-gray-600/80 text-white rounded-full hover:bg-gray-600 transition-colors"
+            className="flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 bg-gray-600/80 text-white rounded-full hover:bg-gray-600 transition-colors mx-auto sm:mx-0"
           >
             {isInWatchlist ? (
-              <Check className="w-6 h-6 text-green-400" />
+              <Check className="w-5 h-5 sm:w-6 sm:h-6 text-green-400" />
             ) : (
-              <Plus className="w-6 h-6" />
+              <Plus className="w-5 h-5 sm:w-6 sm:h-6" />
             )}
           </button>
         </div>
