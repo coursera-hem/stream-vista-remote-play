@@ -66,21 +66,41 @@ const Index = () => {
 
   const fetchMovies = async () => {
     try {
-      console.log('Fetching movies from Firebase...');
-      const moviesCollection = collection(db, 'movies');
-      const moviesQuery = query(moviesCollection, orderBy('uploadedAt', 'desc'));
-      const movieSnapshot = await getDocs(moviesQuery);
+      console.log('Starting to fetch movies from Firebase...');
+      console.log('Firebase DB instance:', db);
       
-      const movieList = movieSnapshot.docs.map(doc => {
+      const moviesCollection = collection(db, 'movies');
+      console.log('Movies collection reference:', moviesCollection);
+      
+      // Try without orderBy first to see if that's causing issues
+      console.log('Attempting to get all documents from movies collection...');
+      const movieSnapshot = await getDocs(moviesCollection);
+      console.log('Movie snapshot received:', movieSnapshot);
+      console.log('Number of docs in snapshot:', movieSnapshot.size);
+      console.log('Snapshot empty?', movieSnapshot.empty);
+      
+      if (movieSnapshot.empty) {
+        console.log('No documents found in movies collection');
+        toast({
+          title: "No Movies Found",
+          description: "No movies found in the database. Please upload some movies from the admin dashboard.",
+        });
+        setLoading(false);
+        return;
+      }
+
+      const movieList: AppMovie[] = [];
+      
+      movieSnapshot.docs.forEach((doc, index) => {
         const data = doc.data();
-        console.log('Fetched movie:', { id: doc.id, ...data });
+        console.log(`Movie ${index + 1} - Doc ID: ${doc.id}`, data);
         
         // Transform Firebase data to match our AppMovie interface
-        return {
+        const movie: AppMovie = {
           id: doc.id,
           title: data.title || 'Untitled',
           poster: data.poster || '/placeholder.svg',
-          backdrop: data.poster || '/placeholder.svg', // Use poster as backdrop if no backdrop
+          backdrop: data.backdrop || data.poster || '/placeholder.svg',
           year: data.releaseYear || data.year || new Date().getFullYear(),
           genre: data.genre || 'Unknown',
           rating: data.rating || 0,
@@ -93,28 +113,36 @@ const Index = () => {
           isFeatured: data.isFeatured || false,
           views: data.views || 0
         };
-      }) as AppMovie[];
+        
+        console.log(`Transformed movie ${index + 1}:`, movie);
+        movieList.push(movie);
+      });
 
+      console.log('Final movie list:', movieList);
       console.log('Total movies loaded:', movieList.length);
-      console.log('Movies data:', movieList);
+      
       setMovies(movieList);
 
       // Set featured movie (first movie marked as featured, or first movie if none)
       const featured = movieList.find(movie => movie.isFeatured) || movieList[0];
+      console.log('Featured movie selected:', featured);
       setFeaturedMovie(featured || null);
 
-      if (movieList.length === 0) {
-        console.log('No movies found in database');
-        toast({
-          title: "No Movies Found",
-          description: "Upload some movies from the admin dashboard to get started.",
-        });
-      }
+      toast({
+        title: "Movies Loaded",
+        description: `Successfully loaded ${movieList.length} movies from database.`,
+      });
+      
     } catch (error) {
       console.error('Error fetching movies:', error);
+      console.error('Error details:', {
+        name: error.name,
+        message: error.message,
+        stack: error.stack
+      });
       toast({
-        title: "Error",
-        description: "Failed to load movies from database",
+        title: "Error Loading Movies",
+        description: `Failed to load movies: ${error.message}`,
         variant: "destructive"
       });
     } finally {
@@ -203,6 +231,10 @@ const Index = () => {
   const recentMovies = movies.slice(0, 10); // Most recent 10 movies
   const topRatedMovies = movies.filter(movie => movie.rating >= 8).sort((a, b) => b.rating - a.rating);
 
+  console.log('Current movies state:', movies);
+  console.log('Movies length:', movies.length);
+  console.log('Loading state:', loading);
+
   if (showVideoPlayer && selectedMovie) {
     return (
       <VideoPlayer
@@ -234,14 +266,22 @@ const Index = () => {
           <div className="text-center">
             <h1 className="text-4xl font-bold mb-4">No Movies Available</h1>
             <p className="text-gray-400 mb-8">Upload some movies from the admin dashboard to get started.</p>
-            {userData?.isAdmin && (
+            <div className="mb-4">
               <button
-                onClick={() => navigate('/admin')}
-                className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-semibold"
+                onClick={fetchMovies}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold mr-4"
               >
-                Go to Admin Dashboard
+                Refresh Movies
               </button>
-            )}
+              {userData?.isAdmin && (
+                <button
+                  onClick={() => navigate('/admin')}
+                  className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-semibold"
+                >
+                  Go to Admin Dashboard
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </div>
