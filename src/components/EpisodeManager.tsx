@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { collection, query, where, getDocs, deleteDoc, doc, orderBy } from 'firebase/firestore';
 import { db } from '../config/firebase';
@@ -23,10 +24,11 @@ export const EpisodeManager: React.FC<EpisodeManagerProps> = ({
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [showUploadForm, setShowUploadForm] = useState(false);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
-    console.log('EpisodeManager - animeId:', animeId, 'animeTitle:', animeTitle);
+    console.log('EpisodeManager mounted - animeId:', animeId, 'animeTitle:', animeTitle);
     if (animeId) {
       fetchEpisodes();
     } else {
@@ -38,48 +40,87 @@ export const EpisodeManager: React.FC<EpisodeManagerProps> = ({
   const fetchEpisodes = async () => {
     if (!animeId) {
       console.log('Cannot fetch episodes: animeId is missing');
+      setFetchError('Anime ID is missing');
+      setLoading(false);
       return;
     }
     
     try {
       setLoading(true);
-      console.log('Fetching episodes for animeId:', animeId);
+      setFetchError(null);
+      console.log('Starting to fetch episodes for animeId:', animeId);
       
-      const episodesRef = collection(db, 'episodes');
+      // Test Firebase connection first
+      console.log('Testing Firebase connection...');
+      const testCollection = collection(db, 'episodes');
+      console.log('Episodes collection reference created:', testCollection);
+      
       const q = query(
-        episodesRef,
+        testCollection,
         where('animeId', '==', animeId),
         orderBy('episodeNumber', 'asc')
       );
       
-      console.log('Episodes query created:', q);
+      console.log('Episodes query created for animeId:', animeId);
       const querySnapshot = await getDocs(q);
-      console.log('Episodes query snapshot:', querySnapshot);
+      console.log('Episodes query executed successfully');
+      console.log('Query snapshot:', querySnapshot);
       console.log('Number of episodes found:', querySnapshot.size);
+      console.log('Query snapshot empty:', querySnapshot.empty);
       
-      const episodeList = querySnapshot.docs.map(doc => {
+      if (querySnapshot.empty) {
+        console.log('No episodes found in Firebase for animeId:', animeId);
+        setEpisodes([]);
+        setLoading(false);
+        return;
+      }
+      
+      const episodeList: Episode[] = [];
+      querySnapshot.forEach((doc) => {
         const data = doc.data();
-        console.log('Episode document:', { id: doc.id, ...data });
-        return {
+        console.log('Processing episode document:', { id: doc.id, ...data });
+        
+        const episode: Episode = {
           id: doc.id,
-          ...data
+          animeId: data.animeId,
+          episodeNumber: data.episodeNumber,
+          title: data.title,
+          description: data.description || '',
+          videoUrl: data.videoUrl,
+          thumbnail: data.thumbnail,
+          duration: data.duration,
+          airDate: data.airDate ? data.airDate.toDate() : undefined,
+          views: data.views || 0,
+          createdAt: data.createdAt ? data.createdAt.toDate() : new Date(),
+          updatedAt: data.updatedAt ? data.updatedAt.toDate() : new Date()
         };
-      }) as Episode[];
+        
+        episodeList.push(episode);
+        console.log('Added episode to list:', episode);
+      });
       
       console.log('Final episode list:', episodeList);
+      console.log('Total episodes processed:', episodeList.length);
       setEpisodes(episodeList);
       
       if (episodeList.length === 0) {
-        console.log('No episodes found for anime:', animeId);
+        console.log('Episode list is empty after processing');
       } else {
-        console.log(`Found ${episodeList.length} episodes for anime:`, animeId);
+        console.log(`Successfully loaded ${episodeList.length} episodes`);
       }
       
     } catch (error) {
       console.error('Error fetching episodes:', error);
+      console.error('Error details:', {
+        message: error.message,
+        code: error.code,
+        stack: error.stack
+      });
+      
+      setFetchError(`Failed to fetch episodes: ${error.message}`);
       toast({
         title: "Error",
-        description: "Failed to fetch episodes",
+        description: `Failed to fetch episodes: ${error.message}`,
         variant: "destructive"
       });
     } finally {
@@ -90,11 +131,13 @@ export const EpisodeManager: React.FC<EpisodeManagerProps> = ({
   const handleDeleteEpisode = async (episodeId: string, episodeNumber: number) => {
     if (window.confirm(`Are you sure you want to delete Episode ${episodeNumber}?`)) {
       try {
+        console.log('Deleting episode:', episodeId);
         await deleteDoc(doc(db, 'episodes', episodeId));
         toast({
           title: "Success",
           description: "Episode deleted successfully"
         });
+        console.log('Episode deleted successfully, refreshing list...');
         fetchEpisodes();
       } catch (error) {
         console.error('Error deleting episode:', error);
@@ -105,6 +148,16 @@ export const EpisodeManager: React.FC<EpisodeManagerProps> = ({
         });
       }
     }
+  };
+
+  const handleEpisodeAdded = () => {
+    console.log('Episode added, refreshing episode list...');
+    fetchEpisodes();
+    setShowUploadForm(false);
+    toast({
+      title: "Success",
+      description: "Episode added successfully!"
+    });
   };
 
   const filteredEpisodes = episodes.filter(episode =>
@@ -141,10 +194,7 @@ export const EpisodeManager: React.FC<EpisodeManagerProps> = ({
         <EpisodeUploadForm
           animeId={animeId}
           animeTitle={animeTitle}
-          onEpisodeAdded={() => {
-            fetchEpisodes();
-            setShowUploadForm(false);
-          }}
+          onEpisodeAdded={handleEpisodeAdded}
         />
       </div>
     );
@@ -166,6 +216,9 @@ export const EpisodeManager: React.FC<EpisodeManagerProps> = ({
             <h2 className="text-3xl font-bold text-white">Manage Episodes</h2>
             <p className="text-gray-400">{animeTitle}</p>
             <p className="text-sm text-gray-500">Anime ID: {animeId}</p>
+            {fetchError && (
+              <p className="text-sm text-red-400 mt-1">Error: {fetchError}</p>
+            )}
           </div>
         </div>
         <Button 
@@ -191,9 +244,22 @@ export const EpisodeManager: React.FC<EpisodeManagerProps> = ({
         </div>
       </div>
 
+      {/* Debug Information */}
+      <div className="mb-4 p-4 bg-gray-800 rounded-lg">
+        <h4 className="text-white font-medium mb-2">Debug Information:</h4>
+        <div className="text-sm text-gray-400">
+          <p>Anime ID: {animeId}</p>
+          <p>Episodes Count: {episodes.length}</p>
+          <p>Loading: {loading ? 'Yes' : 'No'}</p>
+          <p>Has Error: {fetchError ? 'Yes' : 'No'}</p>
+          <p>Filtered Episodes: {filteredEpisodes.length}</p>
+        </div>
+      </div>
+
       {loading ? (
         <div className="text-center py-20">
           <div className="text-white text-xl">Loading episodes...</div>
+          <div className="text-gray-400 mt-2">Fetching episodes for anime: {animeId}</div>
         </div>
       ) : (
         <div className="space-y-4">

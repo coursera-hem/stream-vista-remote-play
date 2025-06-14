@@ -41,6 +41,7 @@ export const EpisodeUploadForm: React.FC<EpisodeUploadFormProps> = ({
   const [uploadProgress, setUploadProgress] = useState(0);
   const [thumbnailUploading, setThumbnailUploading] = useState(false);
   const [thumbnailProgress, setThumbnailProgress] = useState(0);
+  const [submitting, setSubmitting] = useState(false);
   const { toast } = useToast();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -68,6 +69,7 @@ export const EpisodeUploadForm: React.FC<EpisodeUploadFormProps> = ({
     setUploadProgress(0);
 
     try {
+      console.log('Starting video upload for file:', file.name);
       const timestamp = Date.now();
       const sanitizedFileName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
       const fileName = `episodes/${animeId}/${timestamp}_${sanitizedFileName}`;
@@ -78,9 +80,10 @@ export const EpisodeUploadForm: React.FC<EpisodeUploadFormProps> = ({
         (snapshot) => {
           const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
           setUploadProgress(Math.round(progress));
+          console.log('Video upload progress:', Math.round(progress) + '%');
         },
         (error) => {
-          console.error('Upload error:', error);
+          console.error('Video upload error:', error);
           toast({
             title: "Upload Error",
             description: "Failed to upload video file",
@@ -91,6 +94,7 @@ export const EpisodeUploadForm: React.FC<EpisodeUploadFormProps> = ({
         async () => {
           try {
             const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+            console.log('Video upload completed. Download URL:', downloadURL);
             setFormData(prev => ({
               ...prev,
               videoUrl: downloadURL
@@ -103,7 +107,7 @@ export const EpisodeUploadForm: React.FC<EpisodeUploadFormProps> = ({
             setUploading(false);
             setUploadProgress(0);
           } catch (error) {
-            console.error('Error getting download URL:', error);
+            console.error('Error getting video download URL:', error);
             toast({
               title: "Error",
               description: "Failed to get video URL",
@@ -114,7 +118,7 @@ export const EpisodeUploadForm: React.FC<EpisodeUploadFormProps> = ({
         }
       );
     } catch (error) {
-      console.error('Upload error:', error);
+      console.error('Video upload start error:', error);
       toast({
         title: "Error",
         description: "Failed to start upload",
@@ -141,6 +145,7 @@ export const EpisodeUploadForm: React.FC<EpisodeUploadFormProps> = ({
     setThumbnailProgress(0);
 
     try {
+      console.log('Starting thumbnail upload for file:', file.name);
       const timestamp = Date.now();
       const randomId = Math.random().toString(36).substring(2);
       const fileExtension = file.name.split('.').pop() || 'jpg';
@@ -152,6 +157,7 @@ export const EpisodeUploadForm: React.FC<EpisodeUploadFormProps> = ({
         (snapshot) => {
           const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
           setThumbnailProgress(Math.round(progress));
+          console.log('Thumbnail upload progress:', Math.round(progress) + '%');
         },
         (error) => {
           console.error('Thumbnail upload error:', error);
@@ -165,6 +171,7 @@ export const EpisodeUploadForm: React.FC<EpisodeUploadFormProps> = ({
         async () => {
           try {
             const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+            console.log('Thumbnail upload completed. Download URL:', downloadURL);
             setFormData(prev => ({
               ...prev,
               thumbnail: downloadURL
@@ -177,7 +184,7 @@ export const EpisodeUploadForm: React.FC<EpisodeUploadFormProps> = ({
             setThumbnailUploading(false);
             setThumbnailProgress(0);
           } catch (error) {
-            console.error('Error getting download URL:', error);
+            console.error('Error getting thumbnail download URL:', error);
             toast({
               title: "Error",
               description: "Failed to get thumbnail URL",
@@ -188,7 +195,7 @@ export const EpisodeUploadForm: React.FC<EpisodeUploadFormProps> = ({
         }
       );
     } catch (error) {
-      console.error('Thumbnail upload error:', error);
+      console.error('Thumbnail upload start error:', error);
       toast({
         title: "Error",
         description: "Failed to start thumbnail upload",
@@ -199,20 +206,32 @@ export const EpisodeUploadForm: React.FC<EpisodeUploadFormProps> = ({
   };
 
   const checkEpisodeExists = async (episodeNumber: number): Promise<boolean> => {
-    const episodesRef = collection(db, 'episodes');
-    const q = query(
-      episodesRef,
-      where('animeId', '==', animeId),
-      where('episodeNumber', '==', episodeNumber)
-    );
-    const querySnapshot = await getDocs(q);
-    return !querySnapshot.empty;
+    try {
+      console.log('Checking if episode exists:', { animeId, episodeNumber });
+      const episodesRef = collection(db, 'episodes');
+      const q = query(
+        episodesRef,
+        where('animeId', '==', animeId),
+        where('episodeNumber', '==', episodeNumber)
+      );
+      const querySnapshot = await getDocs(q);
+      const exists = !querySnapshot.empty;
+      console.log('Episode exists check result:', exists);
+      return exists;
+    } catch (error) {
+      console.error('Error checking if episode exists:', error);
+      return false;
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.videoUrl) {
+    console.log('Episode form submission started');
+    console.log('Form data:', formData);
+    console.log('Anime ID:', animeId);
+    
+    if (!formData.videoUrl.trim()) {
       toast({
         title: "Error",
         description: "Please provide a video file or Google Drive link",
@@ -230,6 +249,8 @@ export const EpisodeUploadForm: React.FC<EpisodeUploadFormProps> = ({
       return;
     }
 
+    setSubmitting(true);
+
     try {
       // Check if episode number already exists
       const episodeExists = await checkEpisodeExists(formData.episodeNumber);
@@ -239,28 +260,28 @@ export const EpisodeUploadForm: React.FC<EpisodeUploadFormProps> = ({
           description: `Episode ${formData.episodeNumber} already exists for this anime`,
           variant: "destructive"
         });
+        setSubmitting(false);
         return;
       }
 
-      const episodeData: Omit<CreateEpisodeData, 'animeId'> & { 
-        animeId: string;
-        views: number;
-        createdAt: any;
-        updatedAt: any;
-      } = {
-        animeId,
+      console.log('Creating episode document...');
+      const episodeData = {
+        animeId: animeId,
         episodeNumber: formData.episodeNumber,
-        title: formData.title,
-        description: formData.description,
-        videoUrl: formData.videoUrl,
-        thumbnail: formData.thumbnail,
-        duration: formData.duration,
+        title: formData.title.trim(),
+        description: formData.description.trim(),
+        videoUrl: formData.videoUrl.trim(),
+        thumbnail: formData.thumbnail.trim(),
+        duration: formData.duration.trim(),
         views: 0,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
       };
 
-      await addDoc(collection(db, 'episodes'), episodeData);
+      console.log('Episode data to save:', episodeData);
+
+      const docRef = await addDoc(collection(db, 'episodes'), episodeData);
+      console.log('Episode document created with ID:', docRef.id);
 
       toast({
         title: "Success",
@@ -279,15 +300,23 @@ export const EpisodeUploadForm: React.FC<EpisodeUploadFormProps> = ({
       setVideoFile(null);
       setThumbnailFile(null);
       
+      console.log('Calling onEpisodeAdded callback...');
       onEpisodeAdded();
 
     } catch (error: any) {
       console.error('Error adding episode:', error);
+      console.error('Error details:', {
+        message: error.message,
+        code: error.code,
+        stack: error.stack
+      });
       toast({
         title: "Error",
         description: error.message || 'Failed to add episode',
         variant: "destructive"
       });
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -306,6 +335,18 @@ export const EpisodeUploadForm: React.FC<EpisodeUploadFormProps> = ({
       <h3 className="text-xl font-bold text-white mb-4">
         Add Episode to {animeTitle}
       </h3>
+
+      {/* Debug Information */}
+      <div className="mb-4 p-3 bg-gray-800 rounded">
+        <h4 className="text-white font-medium mb-2">Debug Info:</h4>
+        <div className="text-sm text-gray-400">
+          <p>Anime ID: {animeId}</p>
+          <p>Anime Title: {animeTitle}</p>
+          <p>Current Episode Number: {formData.episodeNumber}</p>
+          <p>Video URL: {formData.videoUrl ? 'Set' : 'Not set'}</p>
+          <p>Submitting: {submitting ? 'Yes' : 'No'}</p>
+        </div>
+      </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -560,11 +601,11 @@ export const EpisodeUploadForm: React.FC<EpisodeUploadFormProps> = ({
         <div className="space-y-3">
           <Button
             type="submit"
-            disabled={uploading || thumbnailUploading || !formData.videoUrl}
+            disabled={uploading || thumbnailUploading || !formData.videoUrl || submitting}
             className="w-full bg-red-600 hover:bg-red-700 flex items-center justify-center gap-2"
           >
             <Plus size={20} />
-            Add Episode
+            {submitting ? 'Adding Episode...' : 'Add Episode'}
           </Button>
 
           <Button

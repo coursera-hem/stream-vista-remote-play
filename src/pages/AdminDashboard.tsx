@@ -52,6 +52,14 @@ const AdminDashboard = () => {
     setSelectedAnime(null);
   };
 
+  const handleAnimeUploadSuccess = () => {
+    toast({
+      title: "Success",
+      description: "Anime uploaded successfully!"
+    });
+    handleBackToDashboard();
+  };
+
   if (!currentUser || !userData?.isAdmin) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
@@ -103,7 +111,7 @@ const AdminDashboard = () => {
             <h1 className="text-3xl font-bold">Upload New Anime</h1>
           </div>
           <div className="bg-gray-900 rounded-lg p-6 border border-gray-700">
-            <AnimeUploadForm onAnimeAdded={handleBackToDashboard} />
+            <AnimeUploadForm />
           </div>
         </div>
       </div>
