@@ -5,9 +5,11 @@ import { useNavigate } from 'react-router-dom';
 import { MovieManager } from '../components/MovieManager';
 import { AnimeManager } from '../components/AnimeManager';
 import { EpisodeManager } from '../components/EpisodeManager';
+import { MovieUploadForm } from '../components/MovieUploadForm';
+import { AnimeUploadForm } from '../components/AnimeUploadForm';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { Button } from '../components/ui/button';
-import { ArrowLeft, Film, Tv, PlaySquare } from 'lucide-react';
+import { ArrowLeft, Film, Tv, PlaySquare, Upload, Plus } from 'lucide-react';
 import { useToast } from '../hooks/use-toast';
 
 const AdminDashboard = () => {
@@ -15,6 +17,8 @@ const AdminDashboard = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [selectedAnime, setSelectedAnime] = useState<{ id: string; title: string } | null>(null);
+  const [showMovieUpload, setShowMovieUpload] = useState(false);
+  const [showAnimeUpload, setShowAnimeUpload] = useState(false);
 
   useEffect(() => {
     if (!currentUser) {
@@ -41,10 +45,66 @@ const AdminDashboard = () => {
     setSelectedAnime(null);
   };
 
+  const handleBackToDashboard = () => {
+    setShowMovieUpload(false);
+    setShowAnimeUpload(false);
+    setSelectedAnime(null);
+  };
+
   if (!currentUser || !userData?.isAdmin) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="text-white text-xl">Loading...</div>
+      </div>
+    );
+  }
+
+  // Show Movie Upload Form
+  if (showMovieUpload) {
+    return (
+      <div className="min-h-screen bg-black text-white">
+        <div className="container mx-auto px-4 py-8">
+          <div className="flex items-center gap-4 mb-8">
+            <Button
+              onClick={handleBackToDashboard}
+              variant="outline"
+              size="sm"
+              className="border-gray-600 text-white hover:bg-gray-800"
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to Dashboard
+            </Button>
+            <h1 className="text-3xl font-bold">Upload New Movie</h1>
+          </div>
+          <div className="bg-gray-900 rounded-lg p-6 border border-gray-700">
+            <MovieUploadForm />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show Anime Upload Form
+  if (showAnimeUpload) {
+    return (
+      <div className="min-h-screen bg-black text-white">
+        <div className="container mx-auto px-4 py-8">
+          <div className="flex items-center gap-4 mb-8">
+            <Button
+              onClick={handleBackToDashboard}
+              variant="outline"
+              size="sm"
+              className="border-gray-600 text-white hover:bg-gray-800"
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to Dashboard
+            </Button>
+            <h1 className="text-3xl font-bold">Upload New Anime</h1>
+          </div>
+          <div className="bg-gray-900 rounded-lg p-6 border border-gray-700">
+            <AnimeUploadForm />
+          </div>
+        </div>
       </div>
     );
   }
@@ -93,6 +153,24 @@ const AdminDashboard = () => {
             <p className="text-gray-400">Welcome, {userData.name}</p>
             <p className="text-sm text-red-400">Administrator</p>
           </div>
+        </div>
+
+        {/* Quick Action Buttons */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4 mb-8">
+          <Button
+            onClick={() => setShowMovieUpload(true)}
+            className="bg-red-600 hover:bg-red-700 h-16 text-lg flex items-center justify-center gap-3"
+          >
+            <Upload className="w-6 h-6" />
+            Upload Movie
+          </Button>
+          <Button
+            onClick={() => setShowAnimeUpload(true)}
+            className="bg-blue-600 hover:bg-blue-700 h-16 text-lg flex items-center justify-center gap-3"
+          >
+            <Plus className="w-6 h-6" />
+            Upload Anime
+          </Button>
         </div>
 
         <Tabs defaultValue="movies" className="w-full">
