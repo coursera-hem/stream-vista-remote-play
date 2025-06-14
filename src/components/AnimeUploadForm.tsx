@@ -15,6 +15,7 @@ interface AnimeData {
   description: string;
   genre: string;
   releaseYear: number;
+  episodes: number;
   status: string;
   poster: string;
   videoUrl: string;
@@ -37,6 +38,7 @@ export const AnimeUploadForm = () => {
     description: '',
     genre: 'Action',
     releaseYear: new Date().getFullYear(),
+    episodes: 1,
     status: 'Completed',
     driveLink: '',
     poster: '',
@@ -440,6 +442,7 @@ export const AnimeUploadForm = () => {
         description: formData.description,
         genre: formData.genre,
         releaseYear: formData.releaseYear,
+        episodes: formData.episodes,
         status: formData.status,
         poster: formData.poster,
         videoUrl: videoUrl,
@@ -491,6 +494,7 @@ export const AnimeUploadForm = () => {
       description: '',
       genre: 'Action',
       releaseYear: new Date().getFullYear(),
+      episodes: 1,
       status: 'Completed',
       driveLink: '',
       poster: '',
@@ -570,6 +574,10 @@ export const AnimeUploadForm = () => {
               <div>
                 <span className="text-gray-400">Genre:</span>
                 <span className="text-white ml-2">{formData.genre}</span>
+              </div>
+              <div>
+                <span className="text-gray-400">Episodes:</span>
+                <span className="text-white ml-2">{formData.episodes}</span>
               </div>
               <div>
                 <span className="text-gray-400">Status:</span>
@@ -933,7 +941,7 @@ export const AnimeUploadForm = () => {
             </div>
           )}
 
-          {/* Genre, Year, Status, Rating, Language */}
+          {/* Genre, Year, Episodes, Status */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="genre" className="text-white">Genre *</Label>
@@ -960,6 +968,20 @@ export const AnimeUploadForm = () => {
                 min="1900"
                 max={new Date().getFullYear() + 5}
                 value={formData.releaseYear}
+                onChange={handleInputChange}
+                required
+                className="bg-gray-800 border-gray-600 text-white"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="episodes" className="text-white">Episodes *</Label>
+              <Input
+                id="episodes"
+                name="episodes"
+                type="number"
+                min="1"
+                value={formData.episodes}
                 onChange={handleInputChange}
                 required
                 className="bg-gray-800 border-gray-600 text-white"
