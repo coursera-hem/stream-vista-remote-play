@@ -40,28 +40,10 @@ export const SeriesModal: React.FC<SeriesModalProps> = ({ series, onClose }) => 
       console.log('Series Title:', series.title);
 
       try {
-        // First, let's check what episodes exist in the database
-        console.log('Step 1: Checking all episodes in database...');
-        const allEpisodesQuery = query(collection(db, 'episodes'));
-        const allEpisodesSnapshot = await getDocs(allEpisodesQuery);
-        console.log('Total episodes in database:', allEpisodesSnapshot.docs.length);
-        
-        allEpisodesSnapshot.docs.forEach(doc => {
-          const data = doc.data();
-          console.log('Episode found:', {
-            id: doc.id,
-            seriesId: data.seriesId,
-            animeId: data.animeId,
-            title: data.title,
-            episodeNumber: data.episodeNumber
-          });
-        });
-
-        // Try multiple query strategies
         let episodesData: Episode[] = [];
 
-        // Strategy 1: Query by seriesId
-        console.log('Step 2: Querying by seriesId =', series.id);
+        // Strategy 1: Query by seriesId (for episodes uploaded as series)
+        console.log('Step 1: Querying by seriesId =', series.id);
         const seriesQuery = query(
           collection(db, 'episodes'),
           where('seriesId', '==', series.id)
@@ -74,9 +56,11 @@ export const SeriesModal: React.FC<SeriesModalProps> = ({ series, onClose }) => 
             id: doc.id,
             ...doc.data()
           })) as Episode[];
-        } else {
-          // Strategy 2: Query by animeId (in case series are stored as anime)
-          console.log('Step 3: Querying by animeId =', series.id);
+        }
+
+        // Strategy 2: Query by animeId (for episodes uploaded through anime form but are actually series)
+        if (episodesData.length === 0) {
+          console.log('Step 2: Querying by animeId =', series.id);
           const animeQuery = query(
             collection(db, 'episodes'),
             where('animeId', '==', series.id)
@@ -89,21 +73,44 @@ export const SeriesModal: React.FC<SeriesModalProps> = ({ series, onClose }) => 
               id: doc.id,
               ...doc.data()
             })) as Episode[];
-          } else {
-            // Strategy 3: Try searching by series title (as a last resort)
-            console.log('Step 4: No episodes found with ID queries, checking if any episodes reference this series by title...');
-            const titleMatchEpisodes = allEpisodesSnapshot.docs.filter(doc => {
-              const data = doc.data();
-              return data.seriesTitle === series.title || data.animeTitle === series.title;
+          }
+        }
+
+        // Strategy 3: Search all episodes and check if any reference this series
+        if (episodesData.length === 0) {
+          console.log('Step 3: Checking all episodes for any reference to this series...');
+          const allEpisodesQuery = query(collection(db, 'episodes'));
+          const allEpisodesSnapshot = await getDocs(allEpisodesQuery);
+          console.log('Total episodes in database:', allEpisodesSnapshot.docs.length);
+          
+          // Log all episodes for debugging
+          allEpisodesSnapshot.docs.forEach(doc => {
+            const data = doc.data();
+            console.log('Episode found:', {
+              id: doc.id,
+              seriesId: data.seriesId,
+              animeId: data.animeId,
+              title: data.title,
+              episodeNumber: data.episodeNumber
             });
-            
-            if (titleMatchEpisodes.length > 0) {
-              console.log('Episodes found by title match:', titleMatchEpisodes.length);
-              episodesData = titleMatchEpisodes.map(doc => ({
-                id: doc.id,
-                ...doc.data()
-              })) as Episode[];
-            }
+          });
+
+          // Check for episodes that might match by title or any other reference
+          const matchingEpisodes = allEpisodesSnapshot.docs.filter(doc => {
+            const data = doc.data();
+            // Check if episode belongs to this series by various means
+            return data.seriesId === series.id || 
+                   data.animeId === series.id ||
+                   data.seriesTitle === series.title || 
+                   data.animeTitle === series.title;
+          });
+          
+          if (matchingEpisodes.length > 0) {
+            console.log('Episodes found by comprehensive search:', matchingEpisodes.length);
+            episodesData = matchingEpisodes.map(doc => ({
+              id: doc.id,
+              ...doc.data()
+            })) as Episode[];
           }
         }
 
@@ -166,8 +173,11 @@ export const SeriesModal: React.FC<SeriesModalProps> = ({ series, onClose }) => 
               <p className="text-gray-400">Loading episodes...</p>
             ) : episodes.length === 0 ? (
               <div className="text-gray-400">
-                <p>No episodes available yet.</p>
-                <p className="text-sm mt-2">Debug info: Check console for detailed episode search results.</p>
+                <p>No episodes found for this series.</p>
+                <p className="text-sm mt-2">
+                  Tip: If you uploaded episodes through the anime section, they might be stored with 'animeId' instead of 'seriesId'. 
+                  Check the console logs for detailed search results.
+                </p>
               </div>
             ) : (
               <div className="space-y-2">
