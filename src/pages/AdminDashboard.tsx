@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -14,6 +13,7 @@ import { AnimeUploadForm } from '../components/AnimeUploadForm';
 import { SeriesUploadForm } from '../components/SeriesUploadForm';
 import { EpisodeUploadForm } from '../components/EpisodeUploadForm';
 import { EpisodeManager } from '../components/EpisodeManager';
+import { UserManager } from '../components/UserManager';
 
 const AdminDashboard = () => {
   const { currentUser, userData, logout, loading } = useAuth();
@@ -252,20 +252,7 @@ const AdminDashboard = () => {
           )}
 
           {activeSection === 'users' && (
-            <div className="bg-gray-900 rounded-lg p-6">
-              <div className="flex items-center gap-4 mb-6">
-                <Button
-                  onClick={() => setActiveSection('dashboard')}
-                  variant="outline"
-                  size="sm"
-                  className="border-gray-600 text-white hover:bg-gray-800"
-                >
-                  ← Back to Dashboard
-                </Button>
-                <h2 className="text-2xl font-bold text-white">User Management</h2>
-              </div>
-              <p className="text-gray-400">User management features coming soon...</p>
-            </div>
+            <UserManager onBack={() => setActiveSection('dashboard')} />
           )}
 
           {showMovieUpload && (
