@@ -58,19 +58,8 @@ export const MovieDetailModal: React.FC<MovieDetailModalProps> = ({
   if (!isOpen || !movie) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/90 z-50 flex items-end justify-center">
-      {/* Backdrop click to close */}
-      <div 
-        className="absolute inset-0" 
-        onClick={onClose}
-      />
-      
-      {/* Modal content with slide animation */}
-      <div className={`
-        relative bg-gray-900 rounded-t-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto
-        transform transition-transform duration-300 ease-out
-        ${isOpen ? 'translate-y-0' : 'translate-y-full'}
-      `}>
+    <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4">
+      <div className="bg-gray-900 rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
         {/* Header with backdrop */}
         <div className="relative h-64 md:h-80">
           <img
@@ -82,7 +71,7 @@ export const MovieDetailModal: React.FC<MovieDetailModalProps> = ({
           
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 w-10 h-10 bg-black/60 hover:bg-black/80 rounded-full flex items-center justify-center transition-colors z-10"
+            className="absolute top-4 right-4 w-10 h-10 bg-black/60 hover:bg-black/80 rounded-full flex items-center justify-center transition-colors"
           >
             <X className="w-6 h-6 text-white" />
           </button>
