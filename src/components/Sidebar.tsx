@@ -24,7 +24,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onLogout, isLoggedIn, onLogin 
     { icon: PlaySquare, label: 'Series', path: '/series', id: 'series' },
     { icon: Tv, label: 'Anime', path: '/anime', id: 'anime' },
     ...(isLoggedIn ? [{ icon: Bookmark, label: 'My List', path: '/mylist', id: 'mylist' }] : []),
-    ...(userData?.isAdmin ? [{ icon: UserCog, label: 'Admin Dashboard', path: '/admin', id: 'admin' }] : []),
+    ...(userData?.isAdmin ? [{ icon: UserCog, label: 'Admin Panel', path: '/admin', id: 'admin' }] : []),
   ];
 
   const handleKeyDown = (e: KeyboardEvent) => {
@@ -97,13 +97,15 @@ export const Sidebar: React.FC<SidebarProps> = ({ onLogout, isLoggedIn, onLogin 
                       setIsOpen(false);
                     }}
                     className={`
-                      w-full flex flex-col items-center justify-center gap-2 px-4 py-4 rounded-lg transition-colors text-center
+                      w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-left
                       ${isActive ? 'bg-red-600 text-white' : 'text-gray-300 hover:bg-gray-800 hover:text-white'}
                       ${isFocused ? 'ring-2 ring-red-500 bg-gray-800' : ''}
                     `}
                   >
-                    <Icon size={24} />
-                    <span className="text-xs font-medium leading-tight">{item.label}</span>
+                    <div className="flex flex-col items-center gap-1">
+                      <Icon size={20} />
+                      <span className="text-xs font-medium">{item.label}</span>
+                    </div>
                   </button>
                 </li>
               );
