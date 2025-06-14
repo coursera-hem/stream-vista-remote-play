@@ -4,9 +4,11 @@ import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { MovieManager } from '../components/MovieManager';
 import { AnimeManager } from '../components/AnimeManager';
+import { SeriesManager } from '../components/SeriesManager';
 import { EpisodeManager } from '../components/EpisodeManager';
 import { MovieUploadForm } from '../components/MovieUploadForm';
 import { AnimeUploadForm } from '../components/AnimeUploadForm';
+import { SeriesUploadForm } from '../components/SeriesUploadForm';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { Button } from '../components/ui/button';
 import { ArrowLeft, Film, Tv, PlaySquare, Upload, Plus } from 'lucide-react';
@@ -157,7 +159,7 @@ const AdminDashboard = () => {
             <h1 className="text-3xl font-bold">Upload New Series</h1>
           </div>
           <div className="bg-gray-900 rounded-lg p-6 border border-gray-700">
-            <AnimeUploadForm />
+            <SeriesUploadForm />
           </div>
         </div>
       </div>
@@ -327,23 +329,7 @@ const AdminDashboard = () => {
               <p className="text-gray-400 mb-6">
                 Upload, edit, and manage TV series in your collection.
               </p>
-              {selectedSeries ? (
-                <EpisodeManager 
-                  animeId={selectedSeries.id} 
-                  animeTitle={selectedSeries.title}
-                  onBack={handleBackToSeries} 
-                />
-              ) : (
-                <div className="text-center py-12">
-                  <PlaySquare className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-                  <p className="text-gray-400 text-lg">
-                    Series management functionality
-                  </p>
-                  <p className="text-gray-500 text-sm mt-2">
-                    Series management will work similarly to anime management
-                  </p>
-                </div>
-              )}
+              <SeriesManager onBack={() => navigate('/')} onManageEpisodes={handleManageSeriesEpisodes} />
             </div>
           </TabsContent>
         </Tabs>
