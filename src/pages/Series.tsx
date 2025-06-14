@@ -2,10 +2,13 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { Sidebar } from '../components/Sidebar';
-import { collection, query, getDocs } from 'firebase/firestore';
+import { collection, query, getDocs, where } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { useNavigate } from 'react-router-dom';
 import { Episode } from '../types/Episode';
+import { Card, CardContent } from '../components/ui/card';
+import { Badge } from '../components/ui/badge';
+import { Play, Calendar, Star } from 'lucide-react';
 
 interface Series {
   id: string;
@@ -72,7 +75,7 @@ const Series = () => {
         
         const seriesInMovies = moviesSnapshot.docs
           .map(doc => ({ id: doc.id, ...doc.data() }))
-          .filter(item => item.type === 'series') as Series[];
+          .filter((item: any) => item.type === 'series') as Series[];
         
         console.log('Series found in movies collection:', seriesInMovies.length);
         
@@ -156,32 +159,73 @@ const Series = () => {
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-8">
               {series.map((seriesItem) => (
-                <div
+                <Card
                   key={seriesItem.id}
-                  className="group cursor-pointer"
+                  className="group cursor-pointer bg-gray-900 border-gray-800 hover:border-red-500 transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-red-500/20"
                   onClick={() => handleSeriesSelect(seriesItem)}
                 >
-                  <div className="aspect-[2/3] bg-gray-800 rounded-lg overflow-hidden">
-                    <img
-                      src={seriesItem.poster}
-                      alt={seriesItem.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      onError={(e) => {
-                        const target = e.target as HTMLImageElement;
-                        target.src = `https://via.placeholder.com/300x450/1f2937/ffffff?text=${encodeURIComponent(seriesItem.title)}`;
-                      }}
-                    />
+                  <div className="relative overflow-hidden rounded-t-lg">
+                    <div className="aspect-[2/3] bg-gray-800">
+                      <img
+                        src={seriesItem.poster}
+                        alt={seriesItem.title}
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.src = `https://via.placeholder.com/300x450/1f2937/ffffff?text=${encodeURIComponent(seriesItem.title)}`;
+                        }}
+                      />
+                    </div>
+                    
+                    {/* Status Badge */}
+                    <Badge 
+                      className={`absolute top-3 right-3 ${
+                        seriesItem.status === 'completed' 
+                          ? 'bg-green-600 hover:bg-green-700' 
+                          : 'bg-blue-600 hover:bg-blue-700'
+                      }`}
+                    >
+                      {seriesItem.status}
+                    </Badge>
+                    
+                    {/* Play Button Overlay */}
+                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                      <div className="bg-red-600 rounded-full p-4 transform scale-75 group-hover:scale-100 transition-transform duration-300">
+                        <Play className="w-6 h-6 text-white fill-white" />
+                      </div>
+                    </div>
                   </div>
-                  <div className="mt-2">
-                    <h3 className="text-white font-semibold group-hover:text-red-400 transition-colors">
-                      {seriesItem.title}
-                    </h3>
-                    <p className="text-gray-400 text-sm">{seriesItem.releaseYear}</p>
-                    <p className="text-gray-400 text-xs">{seriesItem.status}</p>
-                  </div>
-                </div>
+                  
+                  <CardContent className="p-4 space-y-3">
+                    <div>
+                      <h3 className="text-white font-bold text-lg group-hover:text-red-400 transition-colors line-clamp-2">
+                        {seriesItem.title}
+                      </h3>
+                      <p className="text-gray-400 text-sm mt-1 line-clamp-2">{seriesItem.description}</p>
+                    </div>
+                    
+                    <div className="flex items-center justify-between text-xs text-gray-500">
+                      <div className="flex items-center gap-1">
+                        <Calendar className="w-3 h-3" />
+                        <span>{seriesItem.releaseYear}</span>
+                      </div>
+                      {seriesItem.totalEpisodes && (
+                        <div className="flex items-center gap-1">
+                          <Star className="w-3 h-3" />
+                          <span>{seriesItem.totalEpisodes} episodes</span>
+                        </div>
+                      )}
+                    </div>
+                    
+                    <div className="pt-2">
+                      <Badge variant="outline" className="text-xs border-gray-600 text-gray-300">
+                        {seriesItem.genre}
+                      </Badge>
+                    </div>
+                  </CardContent>
+                </Card>
               ))}
             </div>
           )}
