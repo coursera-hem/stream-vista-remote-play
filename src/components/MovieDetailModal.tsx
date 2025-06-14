@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import { X, Play, Plus, Check, Star } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -135,12 +136,12 @@ export const MovieDetailModal: React.FC<MovieDetailModalProps> = ({
                   {isInWatchlist ? (
                     <>
                       <Check className="w-5 h-5 text-green-400" />
-                      In Watchlist
+                      In mylist
                     </>
                   ) : (
                     <>
                       <Plus className="w-5 h-5" />
-                      Add to Watchlist
+                      Add to mylist
                     </>
                   )}
                 </button>
