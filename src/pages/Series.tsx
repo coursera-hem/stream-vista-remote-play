@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { Navigation } from '../components/Navigation';
@@ -153,11 +154,11 @@ const Series = () => {
                   
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <EpisodeUploadForm 
-                      seriesId={selectedSeries.id}
+                      animeId={selectedSeries.id}
                       onEpisodeAdded={refreshEpisodes}
                     />
                     <EpisodeManager 
-                      seriesId={selectedSeries.id}
+                      animeId={selectedSeries.id}
                       onEpisodeSelect={handleEpisodeSelect}
                       selectedEpisode={selectedEpisode}
                     />

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -24,12 +23,14 @@ const AdminDashboard = () => {
   const [showAnimeUpload, setShowAnimeUpload] = useState(false);
   const [showSeriesUpload, setShowSeriesUpload] = useState(false);
 
-  // Immediate redirect for unauthorized access
+  // Immediate and comprehensive access control
   useEffect(() => {
-    if (loading) return; // Wait for auth to load
+    // Don't check while still loading
+    if (loading) return;
 
+    // Redirect if no user is logged in
     if (!currentUser) {
-      console.log('No current user, redirecting to signin');
+      console.log('AdminDashboard: No current user, redirecting to signin');
       toast({
         title: "Access Denied",
         description: "Please sign in to access the admin panel.",
@@ -39,30 +40,37 @@ const AdminDashboard = () => {
       return;
     }
 
+    // Redirect if user is not an admin
     if (!userData?.isAdmin) {
-      console.log('User is not admin, redirecting to home');
+      console.log('AdminDashboard: User is not admin, redirecting to home');
       toast({
-        title: "Access Denied",
+        title: "Access Denied", 
         description: "You don't have permission to access the admin dashboard.",
         variant: "destructive"
       });
       navigate('/', { replace: true });
       return;
     }
+
+    console.log('AdminDashboard: Access granted for admin user');
   }, [currentUser, userData, loading, navigate, toast]);
 
-  // Show loading state while checking authentication
+  // Show loading state while verifying authentication
   if (loading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="text-white text-xl">Verifying access...</div>
+        <div className="text-white text-xl">Verifying admin access...</div>
       </div>
     );
   }
 
-  // Don't render anything if not authorized
+  // Block rendering if user is not authenticated or not admin
   if (!currentUser || !userData?.isAdmin) {
-    return null;
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="text-white text-xl">Redirecting...</div>
+      </div>
+    );
   }
 
   const handleManageEpisodes = (animeId: string, animeTitle: string) => {

@@ -26,7 +26,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
         description: "Please sign in to access this page.",
         variant: "destructive"
       });
-      navigate('/signin');
+      navigate('/signin', { replace: true });
       return;
     }
 
@@ -36,21 +36,27 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
         description: "You don't have permission to access this page.",
         variant: "destructive"
       });
-      navigate('/');
+      navigate('/', { replace: true });
       return;
     }
   }, [currentUser, userData, loading, requireAdmin, navigate, toast]);
 
+  // Show loading state while checking authentication
   if (loading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="text-white text-xl">Loading...</div>
+        <div className="text-white text-xl">Verifying access...</div>
       </div>
     );
   }
 
+  // Don't render anything if not authorized - this prevents any flash of content
   if (!currentUser || (requireAdmin && !userData?.isAdmin)) {
-    return null; // Don't render anything while redirecting
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="text-white text-xl">Redirecting...</div>
+      </div>
+    );
   }
 
   return <>{children}</>;
