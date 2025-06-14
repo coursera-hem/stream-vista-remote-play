@@ -74,15 +74,8 @@ export const MovieDetailModal: React.FC<MovieDetailModalProps> = ({
   return (
     <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4">
       <div className="bg-gray-900 rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-        {/* Header with backdrop */}
-        <div className="relative h-64 md:h-80">
-          <img
-            src={movie.backdrop || movie.poster}
-            alt={movie.title}
-            className="w-full h-full object-cover rounded-t-xl"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-transparent to-transparent" />
-          
+        {/* Header with close button */}
+        <div className="relative p-6">
           <button
             onClick={onClose}
             className="absolute top-4 right-4 w-10 h-10 bg-black/60 hover:bg-black/80 rounded-full flex items-center justify-center transition-colors"
@@ -92,7 +85,7 @@ export const MovieDetailModal: React.FC<MovieDetailModalProps> = ({
         </div>
 
         {/* Content */}
-        <div className="p-6 -mt-20 relative z-10">
+        <div className="p-6 pt-0">
           <div className="flex flex-col lg:flex-row gap-6">
             {/* Poster */}
             <div className="flex-shrink-0">
