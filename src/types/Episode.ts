@@ -1,7 +1,8 @@
 
 export interface Episode {
   id: string;
-  animeId: string;
+  animeId?: string;  // For anime episodes
+  seriesId?: string; // For series episodes
   episodeNumber: number;
   title: string;
   description: string;
@@ -15,7 +16,8 @@ export interface Episode {
 }
 
 export interface CreateEpisodeData {
-  animeId: string;
+  animeId?: string;
+  seriesId?: string;
   episodeNumber: number;
   title: string;
   description: string;

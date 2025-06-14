@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { Sidebar } from '../components/Sidebar';
-import { collection, query, getDocs, where } from 'firebase/firestore';
+import { collection, query, getDocs, where, or } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { useNavigate } from 'react-router-dom';
 import { Episode } from '../types/Episode';
@@ -107,19 +107,75 @@ const Series = () => {
       }
 
       try {
+        console.log('Fetching episodes for series:', selectedSeries.id);
+        
+        // Try both seriesId and animeId fields to handle different episode storage formats
         const episodesQuery = query(
           collection(db, 'episodes'),
-          where('seriesId', '==', selectedSeries.id)
+          or(
+            where('seriesId', '==', selectedSeries.id),
+            where('animeId', '==', selectedSeries.id)
+          )
         );
-        const querySnapshot = await getDocs(episodesQuery);
-        const episodesData = querySnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        })) as Episode[];
         
+        const querySnapshot = await getDocs(episodesQuery);
+        console.log('Episodes query results:', querySnapshot.docs.length);
+        
+        const episodesData = querySnapshot.docs.map(doc => {
+          const data = doc.data();
+          console.log('Episode data:', { id: doc.id, ...data });
+          return {
+            id: doc.id,
+            ...data
+          };
+        }) as Episode[];
+        
+        console.log('Total episodes fetched:', episodesData.length);
         setEpisodes(episodesData.sort((a, b) => a.episodeNumber - b.episodeNumber));
       } catch (error) {
         console.error('Error fetching episodes:', error);
+        console.error('Error details:', {
+          message: error.message,
+          code: error.code,
+          selectedSeriesId: selectedSeries.id
+        });
+        
+        // Fallback: try a simpler query if the compound query fails
+        try {
+          console.log('Trying fallback query with seriesId only...');
+          const fallbackQuery = query(
+            collection(db, 'episodes'),
+            where('seriesId', '==', selectedSeries.id)
+          );
+          const fallbackSnapshot = await getDocs(fallbackQuery);
+          console.log('Fallback query results:', fallbackSnapshot.docs.length);
+          
+          if (fallbackSnapshot.docs.length === 0) {
+            console.log('Trying fallback query with animeId...');
+            const animeQuery = query(
+              collection(db, 'episodes'),
+              where('animeId', '==', selectedSeries.id)
+            );
+            const animeSnapshot = await getDocs(animeQuery);
+            console.log('AnimeId query results:', animeSnapshot.docs.length);
+            
+            const episodesData = animeSnapshot.docs.map(doc => ({
+              id: doc.id,
+              ...doc.data()
+            })) as Episode[];
+            
+            setEpisodes(episodesData.sort((a, b) => a.episodeNumber - b.episodeNumber));
+          } else {
+            const episodesData = fallbackSnapshot.docs.map(doc => ({
+              id: doc.id,
+              ...doc.data()
+            })) as Episode[];
+            
+            setEpisodes(episodesData.sort((a, b) => a.episodeNumber - b.episodeNumber));
+          }
+        } catch (fallbackError) {
+          console.error('Fallback query also failed:', fallbackError);
+        }
       }
     };
 
