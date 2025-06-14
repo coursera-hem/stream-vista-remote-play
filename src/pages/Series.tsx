@@ -1,11 +1,10 @@
+
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { Navigation } from '../components/Navigation';
 import { Sidebar } from '../components/Sidebar';
-import { SeriesManager } from '../components/SeriesManager';
-import { EpisodeUploadForm } from '../components/EpisodeUploadForm';
-import { EpisodeManager } from '../components/EpisodeManager';
-import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
+import { VideoPlayer } from '../components/VideoPlayer';
+import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { useNavigate } from 'react-router-dom';
 import { Episode } from '../types/Episode';
@@ -100,14 +99,22 @@ const Series = () => {
   };
 
   const handleEpisodeSelect = (episode: Episode) => {
-    setSelectedEpisode({ ...episode });
+    // Convert episode to movie format for VideoPlayer
+    const movieForPlayer = {
+      id: episode.id,
+      title: `${selectedSeries?.title} - Episode ${episode.episodeNumber}: ${episode.title}`,
+      poster: selectedSeries?.poster || '',
+      year: selectedSeries?.releaseYear || 0,
+      genre: selectedSeries?.genre || '',
+      rating: 0,
+      duration: episode.duration,
+      videoUrl: episode.videoUrl
+    };
+    setSelectedEpisode({ ...episode, movieForPlayer });
   };
 
-  const refreshEpisodes = () => {
-    if (selectedSeries) {
-      // Force re-render by creating a new object reference
-      setSelectedSeries(prev => prev ? { ...prev } : null);
-    }
+  const handleBackFromPlayer = () => {
+    setSelectedEpisode(null);
   };
 
   if (loading) {
@@ -115,6 +122,16 @@ const Series = () => {
       <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="text-white text-xl">Loading series...</div>
       </div>
+    );
+  }
+
+  // Show video player if episode is selected
+  if (selectedEpisode && selectedEpisode.movieForPlayer) {
+    return (
+      <VideoPlayer
+        movie={selectedEpisode.movieForPlayer}
+        onBack={handleBackFromPlayer}
+      />
     );
   }
 
@@ -135,138 +152,106 @@ const Series = () => {
       />
 
       <div className="pt-20 px-6">
-        {userData?.isAdmin ? (
-          <div className="max-w-7xl mx-auto">
-            <h1 className="text-4xl font-bold text-white mb-8">Series Management</h1>
-            
-            <div className="space-y-8">
-              <SeriesManager 
-                onBack={() => {}}
-                onManageEpisodes={(seriesItem) => setSelectedSeries(seriesItem)}
-              />
-              
-              {selectedSeries && (
-                <div className="bg-gray-900 rounded-lg p-6">
-                  <h2 className="text-2xl font-bold text-white mb-4">
-                    Episodes for "{selectedSeries.title}"
-                  </h2>
-                  
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <div>
-                      <h3 className="text-xl font-semibold mb-4">Add New Episode</h3>
-                      <p className="text-gray-400 mb-4">Upload episodes for this series</p>
-                    </div>
-                    <div>
-                      <h3 className="text-xl font-semibold mb-4">Manage Episodes</h3>
-                      <p className="text-gray-400 mb-4">View and edit existing episodes</p>
-                    </div>
+        <div className="max-w-7xl mx-auto">
+          <h1 className="text-4xl font-bold text-white mb-8">Series</h1>
+          
+          {series.length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-gray-400 text-xl">No series available yet.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+              {series.map((seriesItem) => (
+                <div
+                  key={seriesItem.id}
+                  className="group cursor-pointer"
+                  onClick={() => handleSeriesSelect(seriesItem)}
+                >
+                  <div className="aspect-[2/3] bg-gray-800 rounded-lg overflow-hidden">
+                    <img
+                      src={seriesItem.poster}
+                      alt={seriesItem.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.src = `https://via.placeholder.com/300x450/1f2937/ffffff?text=${encodeURIComponent(seriesItem.title)}`;
+                      }}
+                    />
+                  </div>
+                  <div className="mt-2">
+                    <h3 className="text-white font-semibold group-hover:text-red-400 transition-colors">
+                      {seriesItem.title}
+                    </h3>
+                    <p className="text-gray-400 text-sm">{seriesItem.releaseYear}</p>
+                    <p className="text-gray-400 text-xs">{seriesItem.status}</p>
                   </div>
                 </div>
-              )}
+              ))}
             </div>
-          </div>
-        ) : (
-          <div className="max-w-7xl mx-auto">
-            <h1 className="text-4xl font-bold text-white mb-8">Series</h1>
-            
-            {series.length === 0 ? (
-              <div className="text-center py-12">
-                <p className="text-gray-400 text-xl">No series available yet.</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-                {series.map((seriesItem) => (
-                  <div
-                    key={seriesItem.id}
-                    className="group cursor-pointer"
-                    onClick={() => handleSeriesSelect(seriesItem)}
-                  >
-                    <div className="aspect-[2/3] bg-gray-800 rounded-lg overflow-hidden">
-                      <img
-                        src={seriesItem.poster}
-                        alt={seriesItem.title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement;
-                          target.src = `https://via.placeholder.com/300x450/1f2937/ffffff?text=${encodeURIComponent(seriesItem.title)}`;
-                        }}
-                      />
-                    </div>
-                    <div className="mt-2">
-                      <h3 className="text-white font-semibold group-hover:text-red-400 transition-colors">
-                        {seriesItem.title}
-                      </h3>
-                      <p className="text-gray-400 text-sm">{seriesItem.releaseYear}</p>
-                      <p className="text-gray-400 text-xs">{seriesItem.status}</p>
-                    </div>
+          )}
+
+          {selectedSeries && (
+            <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+              <div className="bg-gray-900 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto scrollbar-hide">
+                <div className="p-6">
+                  <div className="flex justify-between items-start mb-4">
+                    <h2 className="text-2xl font-bold text-white">{selectedSeries.title}</h2>
+                    <button
+                      onClick={() => setSelectedSeries(null)}
+                      className="text-gray-400 hover:text-white text-2xl"
+                    >
+                      ×
+                    </button>
                   </div>
-                ))}
-              </div>
-            )}
+                  
+                  <p className="text-gray-300 mb-4">{selectedSeries.description}</p>
+                  
+                  <div className="space-y-2 mb-6">
+                    <p className="text-gray-400">
+                      <span className="text-white font-semibold">Genre:</span> {selectedSeries.genre}
+                    </p>
+                    <p className="text-gray-400">
+                      <span className="text-white font-semibold">Year:</span> {selectedSeries.releaseYear}
+                    </p>
+                    <p className="text-gray-400">
+                      <span className="text-white font-semibold">Language:</span> {selectedSeries.language}
+                    </p>
+                    <p className="text-gray-400">
+                      <span className="text-white font-semibold">Status:</span> {selectedSeries.status}
+                    </p>
+                  </div>
 
-            {selectedSeries && (
-              <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-                <div className="bg-gray-900 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto scrollbar-hide">
-                  <div className="p-6">
-                    <div className="flex justify-between items-start mb-4">
-                      <h2 className="text-2xl font-bold text-white">{selectedSeries.title}</h2>
-                      <button
-                        onClick={() => setSelectedSeries(null)}
-                        className="text-gray-400 hover:text-white text-2xl"
-                      >
-                        ×
-                      </button>
-                    </div>
-                    
-                    <p className="text-gray-300 mb-4">{selectedSeries.description}</p>
-                    
-                    <div className="space-y-2 mb-6">
-                      <p className="text-gray-400">
-                        <span className="text-white font-semibold">Genre:</span> {selectedSeries.genre}
-                      </p>
-                      <p className="text-gray-400">
-                        <span className="text-white font-semibold">Year:</span> {selectedSeries.releaseYear}
-                      </p>
-                      <p className="text-gray-400">
-                        <span className="text-white font-semibold">Language:</span> {selectedSeries.language}
-                      </p>
-                      <p className="text-gray-400">
-                        <span className="text-white font-semibold">Status:</span> {selectedSeries.status}
-                      </p>
-                    </div>
-
-                    <div>
-                      <h3 className="text-xl font-bold text-white mb-4">Episodes</h3>
-                      {episodes.length === 0 ? (
-                        <p className="text-gray-400">No episodes available yet.</p>
-                      ) : (
-                        <div className="space-y-2">
-                          {episodes.map((episode) => (
-                            <div
-                              key={episode.id}
-                              className="bg-gray-800 p-4 rounded-lg hover:bg-gray-700 cursor-pointer transition-colors"
-                              onClick={() => handleEpisodeSelect(episode)}
-                            >
-                              <div className="flex justify-between items-start">
-                                <div>
-                                  <h4 className="text-white font-semibold">
-                                    Episode {episode.episodeNumber}: {episode.title}
-                                  </h4>
-                                  <p className="text-gray-400 text-sm mt-1">{episode.description}</p>
-                                  <p className="text-gray-500 text-xs mt-2">Duration: {episode.duration}</p>
-                                </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-white mb-4">Episodes</h3>
+                    {episodes.length === 0 ? (
+                      <p className="text-gray-400">No episodes available yet.</p>
+                    ) : (
+                      <div className="space-y-2">
+                        {episodes.map((episode) => (
+                          <div
+                            key={episode.id}
+                            className="bg-gray-800 p-4 rounded-lg hover:bg-gray-700 cursor-pointer transition-colors"
+                            onClick={() => handleEpisodeSelect(episode)}
+                          >
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <h4 className="text-white font-semibold">
+                                  Episode {episode.episodeNumber}: {episode.title}
+                                </h4>
+                                <p className="text-gray-400 text-sm mt-1">{episode.description}</p>
+                                <p className="text-gray-500 text-xs mt-2">Duration: {episode.duration}</p>
                               </div>
                             </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
-            )}
-          </div>
-        )}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
