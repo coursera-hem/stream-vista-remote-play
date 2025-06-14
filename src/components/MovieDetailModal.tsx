@@ -1,6 +1,8 @@
 
 import React, { useEffect } from 'react';
 import { X, Play, Plus, Check, Star } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
+import { useToast } from '../hooks/use-toast';
 
 interface AppMovie {
   id: string;
@@ -37,6 +39,9 @@ export const MovieDetailModal: React.FC<MovieDetailModalProps> = ({
   isInWatchlist = false,
   onToggleWatchlist
 }) => {
+  const { currentUser } = useAuth();
+  const { toast } = useToast();
+
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
@@ -54,6 +59,18 @@ export const MovieDetailModal: React.FC<MovieDetailModalProps> = ({
       document.body.style.overflow = 'unset';
     };
   }, [isOpen, onClose]);
+
+  const handlePlayClick = () => {
+    if (!currentUser) {
+      toast({
+        title: "Sign In Required",
+        description: "Please sign in to watch movies",
+        variant: "destructive"
+      });
+      return;
+    }
+    onPlay(movie!);
+  };
 
   if (!isOpen || !movie) return null;
 
@@ -114,11 +131,11 @@ export const MovieDetailModal: React.FC<MovieDetailModalProps> = ({
               {/* Action buttons */}
               <div className="flex gap-4">
                 <button
-                  onClick={() => onPlay(movie)}
+                  onClick={handlePlayClick}
                   className="flex items-center gap-3 bg-white text-black px-8 py-3 rounded-lg font-semibold hover:bg-gray-200 transition-colors"
                 >
                   <Play className="w-5 h-5 fill-current" />
-                  Play
+                  {currentUser ? 'Play' : 'Sign In to Play'}
                 </button>
                 
                 <button

@@ -1,6 +1,8 @@
 
 import React from 'react';
 import { Play, Info, Plus, Check } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
+import { useToast } from '../hooks/use-toast';
 
 interface AppMovie {
   id: string;
@@ -35,6 +37,21 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   isInWatchlist = false,
   onToggleWatchlist
 }) => {
+  const { currentUser } = useAuth();
+  const { toast } = useToast();
+
+  const handlePlayClick = () => {
+    if (!currentUser) {
+      toast({
+        title: "Sign In Required",
+        description: "Please sign in to watch movies",
+        variant: "destructive"
+      });
+      return;
+    }
+    onPlay(featuredMovie);
+  };
+
   return (
     <div className="relative h-screen flex items-center">
       {/* Background image */}
@@ -69,11 +86,11 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
         {/* Action buttons */}
         <div className="flex gap-4">
           <button
-            onClick={() => onPlay(featuredMovie)}
+            onClick={handlePlayClick}
             className="flex items-center gap-3 bg-white text-black px-8 py-4 rounded-lg font-semibold text-lg hover:bg-gray-200 transition-colors"
           >
             <Play className="w-6 h-6 fill-current" />
-            Play
+            {currentUser ? 'Play' : 'Sign In to Play'}
           </button>
           
           <button
