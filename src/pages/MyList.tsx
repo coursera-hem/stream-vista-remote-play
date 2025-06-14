@@ -6,7 +6,7 @@ import { SearchModal } from '../components/SearchModal';
 import { VideoPlayer } from '../components/VideoPlayer';
 import { Movie } from '../types/Movie';
 import { addToRecentlyWatched } from '../services/recentlyWatched';
-import { addToWatchlist, removeFromWatchlist, subscribeToWatchlist } from '../services/watchlistService';
+import { addToWatchlist, removeFromWatchlist, subscribeToWatchlist, migrateWatchlistData } from '../services/watchlistService';
 import { KeyboardNavigationProvider, useKeyboardNavigation } from '../components/KeyboardNavigation';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '../hooks/use-toast';
@@ -34,14 +34,30 @@ const MyListContent = () => {
       return;
     }
     
-    // Fetch all movies first
-    const fetchAllMovies = async () => {
+    console.log('MyList useEffect triggered for user:', currentUser.uid);
+    
+    const initializeData = async () => {
       try {
+        console.log('Starting data initialization...');
+        
+        // First, try to migrate any old data
+        const migrated = await migrateWatchlistData(currentUser.uid);
+        if (migrated) {
+          console.log('Data migration completed');
+        }
+        
+        // Fetch all movies first
+        console.log('Fetching all movies...');
         const moviesCollection = collection(db, 'movies');
         const movieSnapshot = await getDocs(moviesCollection);
         
+        console.log('Movies snapshot empty:', movieSnapshot.empty);
+        console.log('Movies count:', movieSnapshot.docs.length);
+
         if (movieSnapshot.empty) {
+          console.log('No movies found in database');
           setAllMovies([]);
+          setLoading(false);
           return;
         }
 
@@ -49,6 +65,7 @@ const MyListContent = () => {
         
         movieSnapshot.docs.forEach((doc) => {
           const data = doc.data();
+          console.log('Processing movie:', doc.id, data.title);
           
           const movie: Movie = {
             id: doc.id,
@@ -71,33 +88,49 @@ const MyListContent = () => {
           movieList.push(movie);
         });
         
+        console.log('Total movies loaded:', movieList.length);
         setAllMovies(movieList);
+        
+        // Set up subscription after movies are loaded
+        console.log('Setting up my list subscription for user:', currentUser.uid);
+        const unsubscribe = subscribeToWatchlist(currentUser.uid, (movieIds) => {
+          console.log('My list updated via subscription:', movieIds);
+          setWatchlist(movieIds);
+          setLoading(false);
+        });
+
+        return unsubscribe;
       } catch (error) {
-        console.error('Error fetching all movies:', error);
+        console.error('Error in data initialization:', error);
+        setLoading(false);
       }
     };
     
-    fetchAllMovies();
-    
-    console.log('Setting up my list subscription for user:', currentUser.uid);
-    const unsubscribe = subscribeToWatchlist(currentUser.uid, (movieIds) => {
-      console.log('My list updated:', movieIds);
-      setWatchlist(movieIds);
-      setLoading(false);
+    initializeData().then((unsubscribe) => {
+      if (unsubscribe) {
+        return () => {
+          console.log('Cleaning up my list subscription');
+          unsubscribe();
+        };
+      }
     });
-
-    return () => {
-      console.log('Cleaning up my list subscription');
-      unsubscribe();
-    };
   }, [currentUser, navigate]);
   
   // Update watchlist movies whenever allMovies or watchlist changes
   useEffect(() => {
+    console.log('Updating watchlist movies - allMovies count:', allMovies.length, 'watchlist count:', watchlist.length);
+    console.log('Current watchlist movie IDs:', watchlist);
+    
     if (allMovies.length > 0 && watchlist.length > 0) {
-      const filteredMovies = allMovies.filter(movie => watchlist.includes(movie.id));
+      const filteredMovies = allMovies.filter(movie => {
+        const isInWatchlist = watchlist.includes(movie.id);
+        console.log('Movie', movie.title, 'is in watchlist:', isInWatchlist);
+        return isInWatchlist;
+      });
+      console.log('Filtered movies for display:', filteredMovies.map(m => m.title));
       setWatchlistMovies(filteredMovies);
     } else {
+      console.log('Setting empty watchlist movies');
       setWatchlistMovies([]);
     }
   }, [allMovies, watchlist]);
@@ -173,6 +206,8 @@ const MyListContent = () => {
   if (!currentUser) {
     return null;
   }
+
+  console.log('Rendering MyList - loading:', loading, 'watchlistMovies count:', watchlistMovies.length);
 
   return (
     <div className="min-h-screen bg-black text-white">
