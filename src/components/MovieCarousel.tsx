@@ -78,7 +78,7 @@ export const MovieCarousel: React.FC<MovieCarouselProps> = ({
           style={{ scrollSnapType: 'x mandatory' }}
         >
           {movies.map((movie, index) => (
-            <div key={movie.id} style={{ scrollSnapAlign: 'start' }}>
+            <div key={movie.id} style={{ scrollSnapAlign: 'start' }} className={index === 0 ? 'ml-6' : ''}>
               <MovieCard
                 movie={movie}
                 focusId={`home-${rowIndex}-${index}`}
