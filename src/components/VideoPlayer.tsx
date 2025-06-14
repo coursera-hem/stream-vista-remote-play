@@ -18,25 +18,31 @@ interface VideoPlayerProps {
   onBack: () => void;
 }
 
-// Function to convert Google Drive share link to direct video link
-const convertGoogleDriveUrl = (url: string): string => {
-  console.log('Converting Google Drive URL:', url);
+// Function to convert Google Drive share link to streamable formats
+const getGoogleDriveUrls = (url: string): string[] => {
+  console.log('Processing Google Drive URL:', url);
   
-  if (!url) return '';
+  if (!url) return [];
   
   // Check if it's a Google Drive link
   if (url.includes('drive.google.com') && url.includes('/file/d/')) {
     const fileIdMatch = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
     if (fileIdMatch) {
       const fileId = fileIdMatch[1];
-      const directUrl = `https://drive.google.com/uc?export=download&id=${fileId}`;
-      console.log('Converted to direct URL:', directUrl);
-      return directUrl;
+      // Try multiple formats for Google Drive video streaming
+      const urls = [
+        `https://drive.google.com/file/d/${fileId}/preview`,
+        `https://drive.google.com/uc?export=download&id=${fileId}`,
+        `https://drive.google.com/uc?id=${fileId}&export=download`,
+        `https://docs.google.com/file/d/${fileId}/preview`
+      ];
+      console.log('Generated Google Drive URLs:', urls);
+      return urls;
     }
   }
   
-  // If it's already a direct URL or not a Google Drive link, return as is
-  return url;
+  // If it's not a Google Drive link, return as is
+  return [url];
 };
 
 export const VideoPlayer: React.FC<VideoPlayerProps> = ({ movie, onBack }) => {
@@ -46,14 +52,31 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ movie, onBack }) => {
   const [duration, setDuration] = useState(0);
   const [showControls, setShowControls] = useState(true);
   const [videoError, setVideoError] = useState(false);
+  const [currentUrlIndex, setCurrentUrlIndex] = useState(0);
   const videoRef = useRef<HTMLVideoElement>(null);
   const controlsTimeoutRef = useRef<NodeJS.Timeout>();
 
-  // Convert Google Drive URL to direct video URL, fallback to sample video if none provided
-  const videoSrc = movie.videoUrl ? convertGoogleDriveUrl(movie.videoUrl) : "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4";
+  // Get all possible URLs for the video
+  const videoUrls = movie.videoUrl ? getGoogleDriveUrls(movie.videoUrl) : [];
+  const fallbackUrl = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4";
+  const allUrls = [...videoUrls, fallbackUrl];
+  const currentVideoSrc = allUrls[currentUrlIndex] || fallbackUrl;
 
-  console.log('Video source:', videoSrc);
-  console.log('Original movie videoUrl:', movie.videoUrl);
+  console.log('Current video source:', currentVideoSrc);
+  console.log('Available URLs:', allUrls);
+  console.log('Current URL index:', currentUrlIndex);
+
+  // Try next URL when current one fails
+  const tryNextUrl = () => {
+    if (currentUrlIndex < allUrls.length - 1) {
+      console.log('Trying next URL...');
+      setCurrentUrlIndex(currentUrlIndex + 1);
+      setVideoError(false);
+    } else {
+      console.log('All URLs failed');
+      setVideoError(true);
+    }
+  };
 
   useEffect(() => {
     const video = videoRef.current;
@@ -69,24 +92,42 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ movie, onBack }) => {
       if (video.duration && !isNaN(video.duration)) {
         setDuration(video.duration);
         setVideoError(false);
+        console.log('Video loaded successfully with duration:', video.duration);
       }
     };
 
-    const handleError = () => {
-      console.error('Video loading error');
-      setVideoError(true);
+    const handleError = (e: Event) => {
+      console.error('Video loading error for URL:', currentVideoSrc);
+      console.error('Error details:', e);
+      tryNextUrl();
+    };
+
+    const handleCanPlay = () => {
+      console.log('Video can play:', currentVideoSrc);
+      setVideoError(false);
     };
 
     video.addEventListener('timeupdate', updateTime);
     video.addEventListener('loadedmetadata', updateDuration);
     video.addEventListener('error', handleError);
+    video.addEventListener('canplay', handleCanPlay);
 
     return () => {
       video.removeEventListener('timeupdate', updateTime);
       video.removeEventListener('loadedmetadata', updateDuration);
       video.removeEventListener('error', handleError);
+      video.removeEventListener('canplay', handleCanPlay);
     };
-  }, []);
+  }, [currentVideoSrc, currentUrlIndex]);
+
+  // Reset when movie changes
+  useEffect(() => {
+    setCurrentUrlIndex(0);
+    setVideoError(false);
+    setIsPlaying(false);
+    setCurrentTime(0);
+    setDuration(0);
+  }, [movie.id]);
 
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
@@ -121,14 +162,14 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ movie, onBack }) => {
 
   const togglePlay = () => {
     const video = videoRef.current;
-    if (!video) return;
+    if (!video || videoError) return;
 
     if (isPlaying) {
       video.pause();
     } else {
       video.play().catch(error => {
         console.error('Error playing video:', error);
-        setVideoError(true);
+        tryNextUrl();
       });
     }
     setIsPlaying(!isPlaying);
@@ -195,6 +236,8 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ movie, onBack }) => {
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   };
 
+  const isGoogleDriveUrl = movie.videoUrl?.includes('drive.google.com');
+
   return (
     <div className="fixed inset-0 bg-black z-50 flex flex-col">
       {/* Video */}
@@ -205,9 +248,22 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ movie, onBack }) => {
       >
         {videoError ? (
           <div className="w-full h-full flex items-center justify-center">
-            <div className="text-center">
+            <div className="text-center max-w-md">
               <p className="text-white text-xl mb-4">Video could not be loaded</p>
-              <p className="text-gray-400 mb-4">This might be a Google Drive link that requires different access permissions.</p>
+              {isGoogleDriveUrl ? (
+                <div className="text-gray-400 mb-6">
+                  <p className="mb-2">This appears to be a Google Drive link.</p>
+                  <p className="mb-2">Common issues:</p>
+                  <ul className="text-left list-disc list-inside space-y-1 mb-4">
+                    <li>File is not publicly accessible</li>
+                    <li>File requires permission to view</li>
+                    <li>File is not a supported video format</li>
+                  </ul>
+                  <p className="text-sm">Try making the file public or use a direct video hosting service.</p>
+                </div>
+              ) : (
+                <p className="text-gray-400 mb-6">Please check the video URL and try again.</p>
+              )}
               <button
                 onClick={onBack}
                 className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg"
@@ -219,10 +275,10 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ movie, onBack }) => {
         ) : (
           <video
             ref={videoRef}
-            src={videoSrc}
+            src={currentVideoSrc}
             className="w-full h-full object-contain"
             onClick={togglePlay}
-            onError={() => setVideoError(true)}
+            crossOrigin="anonymous"
           />
         )}
 
