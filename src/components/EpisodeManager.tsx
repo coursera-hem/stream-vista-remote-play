@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { collection, query, where, getDocs, deleteDoc, doc, orderBy } from 'firebase/firestore';
 import { db } from '../config/firebase';
@@ -27,29 +26,55 @@ export const EpisodeManager: React.FC<EpisodeManagerProps> = ({
   const { toast } = useToast();
 
   useEffect(() => {
+    console.log('EpisodeManager - animeId:', animeId, 'animeTitle:', animeTitle);
     if (animeId) {
       fetchEpisodes();
+    } else {
+      console.log('No animeId provided to EpisodeManager');
+      setLoading(false);
     }
   }, [animeId]);
 
   const fetchEpisodes = async () => {
-    if (!animeId) return;
+    if (!animeId) {
+      console.log('Cannot fetch episodes: animeId is missing');
+      return;
+    }
     
     try {
       setLoading(true);
+      console.log('Fetching episodes for animeId:', animeId);
+      
       const episodesRef = collection(db, 'episodes');
       const q = query(
         episodesRef,
         where('animeId', '==', animeId),
         orderBy('episodeNumber', 'asc')
       );
-      const querySnapshot = await getDocs(q);
-      const episodeList = querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      })) as Episode[];
       
+      console.log('Episodes query created:', q);
+      const querySnapshot = await getDocs(q);
+      console.log('Episodes query snapshot:', querySnapshot);
+      console.log('Number of episodes found:', querySnapshot.size);
+      
+      const episodeList = querySnapshot.docs.map(doc => {
+        const data = doc.data();
+        console.log('Episode document:', { id: doc.id, ...data });
+        return {
+          id: doc.id,
+          ...data
+        };
+      }) as Episode[];
+      
+      console.log('Final episode list:', episodeList);
       setEpisodes(episodeList);
+      
+      if (episodeList.length === 0) {
+        console.log('No episodes found for anime:', animeId);
+      } else {
+        console.log(`Found ${episodeList.length} episodes for anime:`, animeId);
+      }
+      
     } catch (error) {
       console.error('Error fetching episodes:', error);
       toast({
@@ -140,6 +165,7 @@ export const EpisodeManager: React.FC<EpisodeManagerProps> = ({
           <div>
             <h2 className="text-3xl font-bold text-white">Manage Episodes</h2>
             <p className="text-gray-400">{animeTitle}</p>
+            <p className="text-sm text-gray-500">Anime ID: {animeId}</p>
           </div>
         </div>
         <Button 

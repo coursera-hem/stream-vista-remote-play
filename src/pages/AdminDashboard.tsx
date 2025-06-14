@@ -38,6 +38,7 @@ const AdminDashboard = () => {
   }, [currentUser, userData, navigate, toast]);
 
   const handleManageEpisodes = (animeId: string, animeTitle: string) => {
+    console.log('Managing episodes for anime:', { animeId, animeTitle });
     setSelectedAnime({ id: animeId, title: animeTitle });
   };
 
@@ -102,7 +103,7 @@ const AdminDashboard = () => {
             <h1 className="text-3xl font-bold">Upload New Anime</h1>
           </div>
           <div className="bg-gray-900 rounded-lg p-6 border border-gray-700">
-            <AnimeUploadForm />
+            <AnimeUploadForm onAnimeAdded={handleBackToDashboard} />
           </div>
         </div>
       </div>
@@ -127,7 +128,11 @@ const AdminDashboard = () => {
               Manage Episodes - {selectedAnime.title}
             </h1>
           </div>
-          <EpisodeManager animeId={selectedAnime.id} onBack={handleBackToAnime} />
+          <EpisodeManager 
+            animeId={selectedAnime.id} 
+            animeTitle={selectedAnime.title}
+            onBack={handleBackToAnime} 
+          />
         </div>
       </div>
     );
@@ -220,7 +225,7 @@ const AdminDashboard = () => {
               <p className="text-gray-400 mb-6">
                 Upload, edit, and manage anime series in your collection.
               </p>
-              <AnimeManager onBack={() => navigate('/')} />
+              <AnimeManager onBack={() => navigate('/')} onManageEpisodes={handleManageEpisodes} />
             </div>
           </TabsContent>
 
@@ -234,7 +239,11 @@ const AdminDashboard = () => {
                 Select an anime from the Anime tab to manage its episodes, or use the quick episode management below.
               </p>
               {selectedAnime ? (
-                <EpisodeManager animeId={selectedAnime.id} onBack={handleBackToAnime} />
+                <EpisodeManager 
+                  animeId={selectedAnime.id} 
+                  animeTitle={selectedAnime.title}
+                  onBack={handleBackToAnime} 
+                />
               ) : (
                 <div className="text-center py-12">
                   <PlaySquare className="w-16 h-16 text-gray-600 mx-auto mb-4" />

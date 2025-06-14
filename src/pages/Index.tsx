@@ -301,8 +301,8 @@ const Index = () => {
   const recentMovies = movies.slice(0, 10); // Most recent 10 movies
   const topRatedMovies = movies.filter(movie => movie.rating >= 8).sort((a, b) => b.rating - a.rating);
 
-  // Filter anime for the new section (featured and trending)
-  const featuredAndTrendingAnime = animes.filter(anime => anime.isFeatured || anime.isTrending);
+  // Show ALL recently added anime (not just featured/trending)
+  const recentlyAddedAnime = animes.slice(0, 10); // Show the 10 most recent anime
 
   // Get featured items for hero carousel (combine featured movies and anime)
   const featuredMovies = movies.filter(movie => movie.isFeatured);
@@ -312,10 +312,11 @@ const Index = () => {
   // If no featured items, use top-rated or most recent items
   const heroItems = allFeaturedItems.length > 0 
     ? allFeaturedItems 
-    : [...topRatedMovies.slice(0, 3), ...featuredAndTrendingAnime.slice(0, 2)];
+    : [...topRatedMovies.slice(0, 3), ...recentlyAddedAnime.slice(0, 2)];
 
   console.log('Current movies state:', movies);
   console.log('Movies length:', movies.length);
+  console.log('Recently added anime:', recentlyAddedAnime);
   console.log('Loading state:', loading);
 
   if (showVideoPlayer && selectedMovie) {
@@ -422,11 +423,11 @@ const Index = () => {
             onToggleWatchlist={handleToggleWatchlist}
           />
 
-          {/* Recently Added Anime */}
-          {featuredAndTrendingAnime.length > 0 && (
+          {/* Recently Added Anime - Show ALL anime, not just featured/trending */}
+          {recentlyAddedAnime.length > 0 && (
             <MovieCarousel
               title="Recently Added Anime"
-              movies={featuredAndTrendingAnime}
+              movies={recentlyAddedAnime}
               rowIndex={currentRowIndex++}
               onMovieSelect={handleMovieSelect}
               watchlist={watchlist}
