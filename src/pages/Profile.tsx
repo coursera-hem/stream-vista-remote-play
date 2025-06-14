@@ -6,16 +6,21 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
-import { Save, Link as LinkIcon } from 'lucide-react';
+import { Save, Link as LinkIcon, Upload, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { uploadProfileImage, validateImageFile } from '../utils/fileUpload';
 
 const Profile = () => {
   const { currentUser, userData, logout, updateUserProfile } = useAuth();
   const navigate = useNavigate();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [name, setName] = useState(userData?.name || '');
   const [email, setEmail] = useState(userData?.email || '');
   const [profileImageUrl, setProfileImageUrl] = useState(userData?.profileImage || '');
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string>('');
+  const [uploadMethod, setUploadMethod] = useState<'url' | 'file'>('url');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
@@ -29,18 +34,63 @@ const Profile = () => {
     navigate('/');
   };
 
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      try {
+        validateImageFile(file);
+        setSelectedFile(file);
+        setPreviewUrl(URL.createObjectURL(file));
+        setError('');
+      } catch (error: any) {
+        setError(error.message);
+        setSelectedFile(null);
+        setPreviewUrl('');
+      }
+    }
+  };
+
+  const clearFile = () => {
+    setSelectedFile(null);
+    setPreviewUrl('');
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const getCurrentImageUrl = () => {
+    if (uploadMethod === 'file' && previewUrl) {
+      return previewUrl;
+    }
+    return profileImageUrl || userData?.profileImage;
+  };
+
   const handleSave = async () => {
     setError('');
     setSuccess('');
     setLoading(true);
 
     try {
+      let imageUrl = profileImageUrl;
+
+      // If file upload method is selected and a file is chosen, upload it
+      if (uploadMethod === 'file' && selectedFile && currentUser) {
+        imageUrl = await uploadProfileImage(selectedFile, currentUser.uid);
+      }
+
       await updateUserProfile({ 
         name, 
         email,
-        profileImage: profileImageUrl.trim() || undefined
+        profileImage: imageUrl.trim() || undefined
       });
+      
       setSuccess('Profile updated successfully!');
+      
+      // Clear file selection after successful upload
+      if (uploadMethod === 'file') {
+        clearFile();
+        setProfileImageUrl(imageUrl);
+      }
     } catch (error: any) {
       setError(error.message);
     } finally {
@@ -70,7 +120,7 @@ const Profile = () => {
           {/* Profile Image Preview */}
           <div className="flex items-center space-x-4">
             <Avatar className="w-20 h-20">
-              <AvatarImage src={profileImageUrl || userData?.profileImage} />
+              <AvatarImage src={getCurrentImageUrl()} />
               <AvatarFallback className="bg-red-600 text-white text-2xl">
                 {userData?.name?.charAt(0)?.toUpperCase() || 'U'}
               </AvatarFallback>
@@ -100,22 +150,80 @@ const Profile = () => {
 
           {/* Profile Form */}
           <div className="space-y-4">
+            {/* Profile Image Upload Method Selection */}
             <div>
-              <Label htmlFor="profileImage" className="text-white flex items-center gap-2">
-                <LinkIcon size={16} />
-                Profile Image URL
-              </Label>
-              <Input
-                id="profileImage"
-                type="url"
-                value={profileImageUrl}
-                onChange={(e) => setProfileImageUrl(e.target.value)}
-                className="bg-gray-800 border-gray-600 text-white"
-                placeholder="https://example.com/your-profile-image.jpg"
-              />
-              <p className="text-sm text-gray-400 mt-1">
-                Enter a direct link to your profile image (JPEG, PNG, GIF, WebP)
-              </p>
+              <Label className="text-white mb-3 block">Profile Image</Label>
+              <div className="flex gap-2 mb-3">
+                <Button
+                  type="button"
+                  variant={uploadMethod === 'url' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setUploadMethod('url')}
+                  className={uploadMethod === 'url' ? 'bg-red-600 hover:bg-red-700' : ''}
+                >
+                  <LinkIcon size={16} className="mr-1" />
+                  URL
+                </Button>
+                <Button
+                  type="button"
+                  variant={uploadMethod === 'file' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setUploadMethod('file')}
+                  className={uploadMethod === 'file' ? 'bg-red-600 hover:bg-red-700' : ''}
+                >
+                  <Upload size={16} className="mr-1" />
+                  Upload File
+                </Button>
+              </div>
+
+              {uploadMethod === 'url' && (
+                <div>
+                  <Input
+                    id="profileImage"
+                    type="url"
+                    value={profileImageUrl}
+                    onChange={(e) => setProfileImageUrl(e.target.value)}
+                    className="bg-gray-800 border-gray-600 text-white"
+                    placeholder="https://example.com/your-profile-image.jpg"
+                  />
+                  <p className="text-sm text-gray-400 mt-1">
+                    Enter a direct link to your profile image (JPEG, PNG, GIF, WebP)
+                  </p>
+                </div>
+              )}
+
+              {uploadMethod === 'file' && (
+                <div>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFileSelect}
+                      className="bg-gray-800 border-gray-600 text-white"
+                    />
+                    {selectedFile && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={clearFile}
+                        className="px-2"
+                      >
+                        <X size={16} />
+                      </Button>
+                    )}
+                  </div>
+                  <p className="text-sm text-gray-400 mt-1">
+                    Upload an image file (JPEG, PNG, GIF - max 5MB)
+                  </p>
+                  {selectedFile && (
+                    <p className="text-sm text-green-400 mt-1">
+                      Selected: {selectedFile.name}
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
 
             <div>
