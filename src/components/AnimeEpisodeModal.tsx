@@ -139,7 +139,7 @@ export const AnimeEpisodeModal: React.FC<AnimeEpisodeModalProps> = ({
                         {episode.airDate && (
                           <div className="flex items-center gap-1">
                             <Calendar size={12} />
-                            <span>{new Date(episode.airDate.seconds * 1000).toLocaleDateString()}</span>
+                            <span>{new Date(episode.airDate).toLocaleDateString()}</span>
                           </div>
                         )}
                       </div>

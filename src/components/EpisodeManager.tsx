@@ -211,7 +211,7 @@ export const EpisodeManager: React.FC<EpisodeManagerProps> = ({
                       <div className="flex items-center gap-4 text-sm text-gray-500">
                         <span>{episode.views} views</span>
                         {episode.createdAt && (
-                          <span>Added: {new Date(episode.createdAt.seconds * 1000).toLocaleDateString()}</span>
+                          <span>Added: {new Date(episode.createdAt).toLocaleDateString()}</span>
                         )}
                       </div>
                     </div>

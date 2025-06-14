@@ -8,6 +8,7 @@ import { Label } from './ui/label';
 import { Textarea } from './ui/textarea';
 import { Upload, Link as LinkIcon, Video, FileVideo, Plus, Image as ImageIcon } from 'lucide-react';
 import { useToast } from '../hooks/use-toast';
+import { EpisodeForm, EpisodeFormData } from './EpisodeForm';
 
 interface AnimeData {
   title: string;
@@ -43,6 +44,7 @@ export const AnimeUploadForm = () => {
     isFeatured: false
   });
   
+  const [episodesList, setEpisodesList] = useState<EpisodeFormData[]>([]);
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [posterFile, setPosterFile] = useState<File | null>(null);
   const [uploadMethod, setUploadMethod] = useState<'drive' | 'upload'>('drive');
@@ -402,6 +404,29 @@ export const AnimeUploadForm = () => {
     }
   };
 
+  const saveEpisodesToFirebase = async (animeId: string) => {
+    if (episodesList.length === 0) return;
+
+    const episodePromises = episodesList.map(async (episode) => {
+      const episodeData = {
+        animeId,
+        episodeNumber: episode.episodeNumber,
+        title: episode.title,
+        description: episode.description,
+        videoUrl: episode.videoUrl,
+        thumbnail: episode.thumbnail,
+        duration: episode.duration,
+        views: 0,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      };
+
+      return addDoc(collection(db, 'episodes'), episodeData);
+    });
+
+    await Promise.all(episodePromises);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -426,6 +451,19 @@ export const AnimeUploadForm = () => {
       return;
     }
 
+    // Validate episodes if any are added
+    if (episodesList.length > 0) {
+      const invalidEpisodes = episodesList.filter(ep => !ep.title.trim() || !ep.videoUrl.trim());
+      if (invalidEpisodes.length > 0) {
+        toast({
+          title: "Error",
+          description: "All episodes must have a title and video URL",
+          variant: "destructive"
+        });
+        return;
+      }
+    }
+
     setLoading(true);
 
     try {
@@ -436,7 +474,7 @@ export const AnimeUploadForm = () => {
         description: formData.description,
         genre: formData.genre,
         releaseYear: formData.releaseYear,
-        episodes: formData.episodes,
+        episodes: Math.max(formData.episodes, episodesList.length),
         status: formData.status,
         poster: formData.poster,
         videoUrl: videoUrl,
@@ -450,12 +488,21 @@ export const AnimeUploadForm = () => {
       };
 
       console.log('Saving anime data to database:', animeData);
-      await addDoc(collection(db, 'animes'), animeData);
+      const animeDoc = await addDoc(collection(db, 'animes'), animeData);
 
-      toast({
-        title: "Success",
-        description: "Anime uploaded successfully!"
-      });
+      // Save episodes if any
+      if (episodesList.length > 0) {
+        await saveEpisodesToFirebase(animeDoc.id);
+        toast({
+          title: "Success",
+          description: `Anime and ${episodesList.length} episodes uploaded successfully!`
+        });
+      } else {
+        toast({
+          title: "Success",
+          description: "Anime uploaded successfully!"
+        });
+      }
 
       // Reset form
       setFormData({
@@ -472,6 +519,7 @@ export const AnimeUploadForm = () => {
         isTrending: false,
         isFeatured: false
       });
+      setEpisodesList([]);
       setVideoFile(null);
       setPosterFile(null);
       setUploadMethod('drive');
@@ -509,6 +557,7 @@ export const AnimeUploadForm = () => {
           <div className="mt-2">
             <p><strong>Poster URL:</strong> {formData.poster ? '✅ Set' : '❌ Empty'}</p>
             {formData.poster && <p className="break-all text-green-400">{formData.poster}</p>}
+            <p><strong>Episodes Count:</strong> {episodesList.length}</p>
           </div>
         </div>
 
@@ -863,6 +912,12 @@ export const AnimeUploadForm = () => {
               </select>
             </div>
           </div>
+
+          {/* Add Episodes Section */}
+          <EpisodeForm
+            episodes={episodesList}
+            onChange={setEpisodesList}
+          />
 
           {/* Flags */}
           <div className="space-y-4">
