@@ -1,8 +1,9 @@
-
 import React, { useState, useEffect } from 'react';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { Episode } from '../types/Episode';
+import { VideoPlayer } from './VideoPlayer';
+import { Play } from 'lucide-react';
 
 interface Series {
   id: string;
@@ -25,6 +26,7 @@ interface SeriesModalProps {
 export const SeriesModal: React.FC<SeriesModalProps> = ({ series, onClose }) => {
   const [episodes, setEpisodes] = useState<Episode[]>([]);
   const [loading, setLoading] = useState(false);
+  const [selectedEpisode, setSelectedEpisode] = useState<Episode | null>(null);
 
   // Fetch episodes for selected series
   useEffect(() => {
@@ -155,6 +157,41 @@ export const SeriesModal: React.FC<SeriesModalProps> = ({ series, onClose }) => 
     fetchEpisodes();
   }, [series]);
 
+  const handleEpisodePlay = (episode: Episode) => {
+    // Convert episode to movie format for VideoPlayer
+    const movieFormat = {
+      id: episode.id,
+      title: `${series?.title} - Episode ${episode.episodeNumber}: ${episode.title}`,
+      poster: episode.thumbnail || series?.poster || '',
+      year: series?.releaseYear || new Date().getFullYear(),
+      genre: series?.genre || 'Series',
+      rating: 0,
+      duration: episode.duration || 'Unknown',
+      videoUrl: episode.videoUrl
+    };
+    setSelectedEpisode(episode);
+  };
+
+  const handleVideoPlayerBack = () => {
+    setSelectedEpisode(null);
+  };
+
+  // Show VideoPlayer if an episode is selected
+  if (selectedEpisode) {
+    const movieFormat = {
+      id: selectedEpisode.id,
+      title: `${series?.title} - Episode ${selectedEpisode.episodeNumber}: ${selectedEpisode.title}`,
+      poster: selectedEpisode.thumbnail || series?.poster || '',
+      year: series?.releaseYear || new Date().getFullYear(),
+      genre: series?.genre || 'Series',
+      rating: 0,
+      duration: selectedEpisode.duration || 'Unknown',
+      videoUrl: selectedEpisode.videoUrl
+    };
+
+    return <VideoPlayer movie={movieFormat} onBack={handleVideoPlayerBack} />;
+  }
+
   if (!series) return null;
 
   return (
@@ -216,10 +253,10 @@ export const SeriesModal: React.FC<SeriesModalProps> = ({ series, onClose }) => 
                 {episodes.map((episode) => (
                   <div
                     key={episode.id}
-                    className="bg-gray-800 p-4 rounded-lg hover:bg-gray-700 cursor-pointer transition-colors"
+                    className="bg-gray-800 p-4 rounded-lg hover:bg-gray-700 transition-colors group"
                   >
                     <div className="flex justify-between items-start">
-                      <div>
+                      <div className="flex-1">
                         <h4 className="text-white font-semibold">
                           Episode {episode.episodeNumber}: {episode.title}
                         </h4>
@@ -229,6 +266,13 @@ export const SeriesModal: React.FC<SeriesModalProps> = ({ series, onClose }) => 
                           Source: {episode.seriesId ? 'Series Upload' : episode.animeId ? 'Anime Upload' : 'Unknown'}
                         </p>
                       </div>
+                      <button
+                        onClick={() => handleEpisodePlay(episode)}
+                        className="ml-4 w-12 h-12 bg-red-600 hover:bg-red-700 rounded-full flex items-center justify-center transition-colors opacity-80 group-hover:opacity-100"
+                        title="Play Episode"
+                      >
+                        <Play className="w-5 h-5 text-white fill-white" />
+                      </button>
                     </div>
                   </div>
                 ))}
