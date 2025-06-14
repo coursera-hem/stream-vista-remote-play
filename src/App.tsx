@@ -14,6 +14,7 @@ import Movies from "./pages/Movies";
 import MyList from "./pages/MyList";
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
+import Anime from "./pages/Anime";
 
 const queryClient = new QueryClient();
 
@@ -31,6 +32,7 @@ const App = () => (
               <Route path="/signup" element={<SignUp />} />
               <Route path="/admin" element={<AdminDashboard />} />
               <Route path="/movies" element={<Movies />} />
+              <Route path="/anime" element={<Anime />} />
               <Route path="/mylist" element={<MyList />} />
               <Route path="/profile" element={<Profile />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

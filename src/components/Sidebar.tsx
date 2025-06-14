@@ -1,6 +1,5 @@
-
 import React, { useState } from 'react';
-import { Home, Film, Bookmark, UserCog, LogOut, User, Menu, X } from 'lucide-react';
+import { Home, Film, Bookmark, UserCog, LogOut, User, Menu, X, Tv } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from './ui/button';
@@ -21,6 +20,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onLogout, isLoggedIn, onLogin 
   const menuItems = [
     { icon: Home, label: 'Home', path: '/', id: 'home' },
     { icon: Film, label: 'Movies', path: '/movies', id: 'movies' },
+    { icon: Tv, label: 'Anime', path: '/anime', id: 'anime' },
     ...(isLoggedIn ? [{ icon: Bookmark, label: 'My List', path: '/mylist', id: 'mylist' }] : []),
     ...(userData?.isAdmin ? [{ icon: UserCog, label: 'Admin Panel', path: '/admin', id: 'admin' }] : []),
   ];

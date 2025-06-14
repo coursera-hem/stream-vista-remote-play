@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Search, Menu, User, Home, Film, Bookmark, LogOut, UserCog } from 'lucide-react';
+import { Search, Menu, User, Home, Film, Bookmark, LogOut, UserCog, Tv } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
@@ -50,6 +50,13 @@ export const Navigation: React.FC<NavigationProps> = ({
             >
               <Film className="w-4 h-4" />
               Movies
+            </button>
+            <button 
+              onClick={() => navigate('/anime')}
+              className="text-white hover:text-gray-300 transition-colors flex items-center gap-2"
+            >
+              <Tv className="w-4 h-4" />
+              Anime
             </button>
             <button 
               onClick={() => navigate('/mylist')}
