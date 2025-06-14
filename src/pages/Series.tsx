@@ -105,8 +105,8 @@ const Series = () => {
 
   const refreshEpisodes = () => {
     if (selectedSeries) {
-      // Trigger episode refetch by updating selectedSeries
-      setSelectedSeries({ ...selectedSeries });
+      // Force re-render by creating a new object reference
+      setSelectedSeries(prev => prev ? { ...prev } : null);
     }
   };
 
@@ -119,7 +119,7 @@ const Series = () => {
   }
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="min-h-screen bg-black text-white overflow-x-hidden">
       <Navigation
         onSearch={() => {}}
         onLogin={handleLogin}
@@ -152,15 +152,14 @@ const Series = () => {
                   </h2>
                   
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <EpisodeUploadForm 
-                      seriesId={selectedSeries.id}
-                      onEpisodeAdded={refreshEpisodes}
-                    />
-                    <EpisodeManager 
-                      seriesId={selectedSeries.id}
-                      onEpisodeSelect={handleEpisodeSelect}
-                      selectedEpisode={selectedEpisode}
-                    />
+                    <div>
+                      <h3 className="text-xl font-semibold mb-4">Add New Episode</h3>
+                      <p className="text-gray-400 mb-4">Upload episodes for this series</p>
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-semibold mb-4">Manage Episodes</h3>
+                      <p className="text-gray-400 mb-4">View and edit existing episodes</p>
+                    </div>
                   </div>
                 </div>
               )}
@@ -207,7 +206,7 @@ const Series = () => {
 
             {selectedSeries && (
               <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-                <div className="bg-gray-900 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+                <div className="bg-gray-900 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto scrollbar-hide">
                   <div className="p-6">
                     <div className="flex justify-between items-start mb-4">
                       <h2 className="text-2xl font-bold text-white">{selectedSeries.title}</h2>

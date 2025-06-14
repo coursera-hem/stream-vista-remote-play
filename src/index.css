@@ -13,6 +13,16 @@
   display: none;
 }
 
+/* Global scrollbar hiding */
+* {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+*::-webkit-scrollbar {
+  display: none;
+}
+
 /* Focus ring for better TV remote navigation */
 .focus-ring {
   @apply ring-4 ring-red-500 ring-opacity-75;

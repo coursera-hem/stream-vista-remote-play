@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Home, Film, Bookmark, UserCog, LogOut, User, Menu, X, Tv, PlaySquare } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -54,35 +54,75 @@ export const Sidebar: React.FC<SidebarProps> = ({ onLogout, isLoggedIn, onLogin 
     }
   };
 
-  React.useEffect(() => {
+  useEffect(() => {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, focusedIndex, menuItems]);
+
+  // Close sidebar when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const sidebar = document.getElementById('mobile-sidebar');
+      const toggle = document.getElementById('sidebar-toggle');
+      
+      if (isOpen && sidebar && toggle && 
+          !sidebar.contains(event.target as Node) && 
+          !toggle.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      // Prevent body scroll when sidebar is open
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen]);
 
   return (
     <>
       {/* Mobile Toggle Button */}
       <button
+        id="sidebar-toggle"
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed top-4 left-4 z-50 w-10 h-10 bg-black/80 backdrop-blur-sm rounded-lg flex items-center justify-center text-white hover:bg-black/90 transition-colors"
+        className="fixed top-4 left-4 z-50 w-10 h-10 bg-black/80 backdrop-blur-sm rounded-lg flex items-center justify-center text-white hover:bg-black/90 transition-colors md:hidden"
         aria-label="Toggle Sidebar"
       >
         {isOpen ? <X size={20} /> : <Menu size={20} />}
       </button>
 
+      {/* Overlay */}
+      {isOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-30 md:hidden"
+          onClick={() => setIsOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
-      <div className={`
-        fixed left-0 top-0 h-full w-64 bg-black/95 backdrop-blur-sm border-r border-gray-800 z-40
-        transform transition-transform duration-300 ease-in-out
-        ${isOpen ? 'translate-x-0' : '-translate-x-full'}
-      `}>
+      <div 
+        id="mobile-sidebar"
+        className={`
+          fixed left-0 top-0 h-full w-64 bg-black/95 backdrop-blur-sm border-r border-gray-800 z-40
+          transform transition-transform duration-300 ease-in-out
+          ${isOpen ? 'translate-x-0' : '-translate-x-full'}
+          md:hidden
+        `}
+      >
         {/* Logo */}
         <div className="p-6 border-b border-gray-800">
           <h1 className="text-2xl font-bold text-red-600">Hem's Flix</h1>
         </div>
 
         {/* Navigation Menu */}
-        <nav className="p-4">
+        <nav className="p-4 flex-1 overflow-y-auto scrollbar-hide">
           <ul className="space-y-2">
             {menuItems.map((item, index) => {
               const Icon = item.icon;
@@ -153,14 +193,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ onLogout, isLoggedIn, onLogin 
           )}
         </div>
       </div>
-
-      {/* Overlay */}
-      {isOpen && (
-        <div
-          className="fixed inset-0 bg-black/50 z-30"
-          onClick={() => setIsOpen(false)}
-        />
-      )}
     </>
   );
 };
