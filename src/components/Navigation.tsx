@@ -102,8 +102,11 @@ export const Navigation: React.FC<NavigationProps> = ({
                 onClick={() => setShowUserMenu(!showUserMenu)}
                 className="transition-colors"
               >
-                <Avatar className="w-10 h-10 border-2 border-red-600 hover:border-red-500">
-                  <AvatarImage src={userData?.profileImage} />
+                <Avatar className={`w-10 h-10 ${userData?.profileImage ? 'border-0' : 'border-2 border-red-600'} hover:border-red-500`}>
+                  <AvatarImage 
+                    src={userData?.profileImage} 
+                    alt={userData?.name || 'Profile'}
+                  />
                   <AvatarFallback className="bg-red-600 text-white">
                     {userData?.name?.charAt(0)?.toUpperCase() || 'U'}
                   </AvatarFallback>
@@ -113,8 +116,8 @@ export const Navigation: React.FC<NavigationProps> = ({
               {showUserMenu && (
                 <div className="absolute right-0 top-12 w-64 bg-gray-900 border border-gray-700 rounded-lg shadow-xl">
                   <div className="p-4 border-b border-gray-700">
-                    <p className="text-white font-semibold">{currentUser?.name || 'User'}</p>
-                    <p className="text-gray-400 text-sm">{currentUser?.email || 'user@example.com'}</p>
+                    <p className="text-white font-semibold">{userData?.name || currentUser?.name || 'User'}</p>
+                    <p className="text-gray-400 text-sm">{userData?.email || currentUser?.email || 'user@example.com'}</p>
                     {userData?.isAdmin && (
                       <span className="inline-block bg-red-600 text-white text-xs px-2 py-1 rounded mt-1">
                         Admin

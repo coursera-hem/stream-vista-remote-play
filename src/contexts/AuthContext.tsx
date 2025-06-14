@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { 
   User, 
@@ -105,11 +106,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         uid: user.uid,
         email: user.email!,
         name: user.displayName || 'Google User',
-        isAdmin: isFirstUser // First user becomes admin
+        isAdmin: isFirstUser, // First user becomes admin
+        profileImage: user.photoURL || undefined // Save Google profile image
       };
       await setDoc(doc(db, 'users', user.uid), userData);
       if (isFirstUser) {
         await setDoc(doc(db, 'settings', 'userCount'), { count: 1 });
+      }
+    } else {
+      // Update existing user with Google profile image if not already set
+      const existingData = userDoc.data() as UserData;
+      if (!existingData.profileImage && user.photoURL) {
+        const updatedData = {
+          ...existingData,
+          profileImage: user.photoURL,
+          name: user.displayName || existingData.name // Update name if changed
+        };
+        await setDoc(doc(db, 'users', user.uid), updatedData);
       }
     }
   };

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { Navigation } from '../components/Navigation';
@@ -141,7 +140,10 @@ const Series = () => {
             <h1 className="text-4xl font-bold text-white mb-8">Series Management</h1>
             
             <div className="space-y-8">
-              <SeriesManager />
+              <SeriesManager 
+                onBack={() => {}}
+                onManageEpisodes={(series) => setSelectedSeries(series)}
+              />
               
               {selectedSeries && (
                 <div className="bg-gray-900 rounded-lg p-6">
@@ -151,11 +153,9 @@ const Series = () => {
                   
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <EpisodeUploadForm 
-                      seriesId={selectedSeries.id} 
                       onEpisodeUploaded={refreshEpisodes}
                     />
                     <EpisodeManager 
-                      seriesId={selectedSeries.id}
                       episodes={episodes}
                       onEpisodeSelect={handleEpisodeSelect}
                       selectedEpisode={selectedEpisode}
@@ -204,7 +204,6 @@ const Series = () => {
               </div>
             )}
 
-            {/* Series Selection Panel */}
             {selectedSeries && (
               <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
                 <div className="bg-gray-900 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
@@ -236,7 +235,6 @@ const Series = () => {
                       </p>
                     </div>
 
-                    {/* Episodes List */}
                     <div>
                       <h3 className="text-xl font-bold text-white mb-4">Episodes</h3>
                       {episodes.length === 0 ? (
