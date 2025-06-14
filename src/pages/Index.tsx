@@ -15,7 +15,7 @@ import { addToRecentlyWatched, getRecentlyWatched } from '../services/recentlyWa
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '../hooks/use-toast';
 
-interface Movie {
+interface AppMovie {
   id: string;
   title: string;
   poster: string;
@@ -46,14 +46,14 @@ interface RecentlyWatchedMovie {
 const Index = () => {
   const [showSearch, setShowSearch] = useState(false);
   const [showLogin, setShowLogin] = useState(false);
-  const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null);
+  const [selectedMovie, setSelectedMovie] = useState<AppMovie | null>(null);
   const [showMovieDetail, setShowMovieDetail] = useState(false);
   const [showVideoPlayer, setShowVideoPlayer] = useState(false);
   const [watchlist, setWatchlist] = useState<string[]>([]);
   const [recentlyWatched, setRecentlyWatched] = useState<RecentlyWatchedMovie[]>([]);
-  const [movies, setMovies] = useState<Movie[]>([]);
+  const [movies, setMovies] = useState<AppMovie[]>([]);
   const [loading, setLoading] = useState(true);
-  const [featuredMovie, setFeaturedMovie] = useState<Movie | null>(null);
+  const [featuredMovie, setFeaturedMovie] = useState<AppMovie | null>(null);
 
   const { currentUser, userData, logout } = useAuth();
   const navigate = useNavigate();
@@ -75,7 +75,7 @@ const Index = () => {
         const data = doc.data();
         console.log('Fetched movie:', { id: doc.id, ...data });
         
-        // Transform Firebase data to match our Movie interface
+        // Transform Firebase data to match our AppMovie interface
         return {
           id: doc.id,
           title: data.title || 'Untitled',
@@ -93,9 +93,10 @@ const Index = () => {
           isFeatured: data.isFeatured || false,
           views: data.views || 0
         };
-      }) as Movie[];
+      }) as AppMovie[];
 
       console.log('Total movies loaded:', movieList.length);
+      console.log('Movies data:', movieList);
       setMovies(movieList);
 
       // Set featured movie (first movie marked as featured, or first movie if none)
@@ -103,6 +104,7 @@ const Index = () => {
       setFeaturedMovie(featured || null);
 
       if (movieList.length === 0) {
+        console.log('No movies found in database');
         toast({
           title: "No Movies Found",
           description: "Upload some movies from the admin dashboard to get started.",
@@ -120,8 +122,8 @@ const Index = () => {
     }
   };
 
-  const handleMovieSelect = (movie: Movie | RecentlyWatchedMovie) => {
-    // Convert RecentlyWatchedMovie to Movie if needed
+  const handleMovieSelect = (movie: AppMovie | RecentlyWatchedMovie) => {
+    // Convert RecentlyWatchedMovie to AppMovie if needed
     const fullMovie = movies.find(m => m.id === movie.id) || {
       ...movie,
       backdrop: movie.poster,
@@ -132,14 +134,14 @@ const Index = () => {
       isTrending: false,
       isFeatured: false,
       views: 0
-    } as Movie;
+    } as AppMovie;
     
     setSelectedMovie(fullMovie);
     setShowMovieDetail(true);
   };
 
-  const handlePlayMovie = (movie: Movie | RecentlyWatchedMovie) => {
-    // Convert RecentlyWatchedMovie to Movie if needed and add to recently watched
+  const handlePlayMovie = (movie: AppMovie | RecentlyWatchedMovie) => {
+    // Convert RecentlyWatchedMovie to AppMovie if needed and add to recently watched
     const fullMovie = movies.find(m => m.id === movie.id) || {
       ...movie,
       backdrop: movie.poster,
@@ -150,9 +152,19 @@ const Index = () => {
       isTrending: false,
       isFeatured: false,
       views: 0
-    } as Movie;
+    } as AppMovie;
 
-    addToRecentlyWatched(movie);
+    // Add to recently watched (convert to the format expected by the service)
+    const recentMovie = {
+      id: movie.id,
+      title: movie.title,
+      poster: movie.poster,
+      year: movie.year,
+      genre: movie.genre,
+      rating: movie.rating,
+      duration: movie.duration
+    };
+    addToRecentlyWatched(recentMovie);
     setRecentlyWatched(getRecentlyWatched());
     
     setSelectedMovie(fullMovie);
