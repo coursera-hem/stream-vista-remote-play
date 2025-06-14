@@ -42,6 +42,23 @@ interface RecentlyWatchedMovie {
   duration: string;
 }
 
+interface FirebaseAnime {
+  id: string;
+  title: string;
+  description: string;
+  genre: string;
+  releaseYear: number;
+  episodes: number;
+  status: string;
+  poster: string;
+  videoUrl: string;
+  rating: number;
+  language: string;
+  isTrending: boolean;
+  isFeatured: boolean;
+  views: number;
+}
+
 const Index = () => {
   const [showSearch, setShowSearch] = useState(false);
   const [showLogin, setShowLogin] = useState(false);
@@ -51,6 +68,7 @@ const Index = () => {
   const [watchlist, setWatchlist] = useState<string[]>([]);
   const [recentlyWatched, setRecentlyWatched] = useState<RecentlyWatchedMovie[]>([]);
   const [movies, setMovies] = useState<AppMovie[]>([]);
+  const [animes, setAnimes] = useState<AppMovie[]>([]);
   const [loading, setLoading] = useState(true);
   const [featuredMovie, setFeaturedMovie] = useState<AppMovie | null>(null);
 
@@ -59,7 +77,7 @@ const Index = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    fetchMovies();
+    Promise.all([fetchMovies(), fetchAnimes()]).finally(() => setLoading(false));
     setRecentlyWatched(getRecentlyWatched());
   }, []);
 
@@ -84,7 +102,6 @@ const Index = () => {
           title: "No Movies Found",
           description: "No movies found in the database. Please upload some movies from the admin dashboard.",
         });
-        setLoading(false);
         return;
       }
 
@@ -144,14 +161,69 @@ const Index = () => {
         description: `Failed to load movies: ${error.message}`,
         variant: "destructive"
       });
-    } finally {
-      setLoading(false);
+    }
+  };
+
+  const fetchAnimes = async () => {
+    try {
+      console.log('Fetching animes from Firebase...');
+      const animesCollection = collection(db, 'animes');
+      const animeSnapshot = await getDocs(animesCollection);
+      
+      if (animeSnapshot.empty) {
+        console.log('No anime documents found');
+        return;
+      }
+
+      const animeList: AppMovie[] = [];
+      
+      animeSnapshot.docs.forEach((doc, index) => {
+        const data = doc.data() as FirebaseAnime;
+        console.log(`Anime ${index + 1} - Doc ID: ${doc.id}`, data);
+        
+        // Transform anime data to match AppMovie interface for carousel compatibility
+        const anime: AppMovie = {
+          id: doc.id,
+          title: data.title || 'Untitled',
+          poster: data.poster || '/placeholder.svg',
+          backdrop: data.poster || '/placeholder.svg',
+          year: data.releaseYear || new Date().getFullYear(),
+          genre: data.genre || 'Anime',
+          rating: data.rating || 0,
+          duration: `${data.episodes} episodes`,
+          description: data.description || 'No description available',
+          videoUrl: data.videoUrl || '',
+          releaseYear: data.releaseYear,
+          language: data.language,
+          isTrending: data.isTrending || false,
+          isFeatured: data.isFeatured || false,
+          views: data.views || 0
+        };
+        
+        animeList.push(anime);
+      });
+
+      console.log('Total animes loaded:', animeList.length);
+      setAnimes(animeList);
+
+      toast({
+        title: "Anime Loaded",
+        description: `Successfully loaded ${animeList.length} anime from database.`,
+      });
+      
+    } catch (error) {
+      console.error('Error fetching animes:', error);
+      toast({
+        title: "Error Loading Anime",
+        description: `Failed to load anime: ${error.message}`,
+        variant: "destructive"
+      });
     }
   };
 
   const handleMovieSelect = (movie: AppMovie | RecentlyWatchedMovie) => {
     // Convert RecentlyWatchedMovie to AppMovie if needed
-    const fullMovie = movies.find(m => m.id === movie.id) || {
+    const fullMovie = movies.find(m => m.id === movie.id) || animes.find(a => a.id === movie.id) || {
       ...movie,
       backdrop: movie.poster,
       description: 'No description available',
@@ -169,7 +241,7 @@ const Index = () => {
 
   const handlePlayMovie = (movie: AppMovie | RecentlyWatchedMovie) => {
     // Convert RecentlyWatchedMovie to AppMovie if needed and add to recently watched
-    const fullMovie = movies.find(m => m.id === movie.id) || {
+    const fullMovie = movies.find(m => m.id === movie.id) || animes.find(a => a.id === movie.id) || {
       ...movie,
       backdrop: movie.poster,
       description: 'No description available',
@@ -235,6 +307,9 @@ const Index = () => {
   const recentMovies = movies.slice(0, 10); // Most recent 10 movies
   const topRatedMovies = movies.filter(movie => movie.rating >= 8).sort((a, b) => b.rating - a.rating);
 
+  // Filter anime for the new section (featured and trending)
+  const featuredAndTrendingAnime = animes.filter(anime => anime.isFeatured || anime.isTrending);
+
   console.log('Current movies state:', movies);
   console.log('Movies length:', movies.length);
   console.log('Loading state:', loading);
@@ -251,12 +326,12 @@ const Index = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="text-white text-xl">Loading movies...</div>
+        <div className="text-white text-xl">Loading content...</div>
       </div>
     );
   }
 
-  if (movies.length === 0) {
+  if (movies.length === 0 && animes.length === 0) {
     return (
       <div className="min-h-screen bg-black text-white">
         <Navigation
@@ -268,14 +343,14 @@ const Index = () => {
         />
         <div className="flex items-center justify-center min-h-[80vh]">
           <div className="text-center">
-            <h1 className="text-4xl font-bold mb-4">No Movies Available</h1>
-            <p className="text-gray-400 mb-8">Upload some movies from the admin dashboard to get started.</p>
+            <h1 className="text-4xl font-bold mb-4">No Content Available</h1>
+            <p className="text-gray-400 mb-8">Upload some movies or anime from the admin dashboard to get started.</p>
             <div className="mb-4">
               <button
-                onClick={fetchMovies}
+                onClick={() => Promise.all([fetchMovies(), fetchAnimes()])}
                 className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold mr-4"
               >
-                Refresh Movies
+                Refresh Content
               </button>
               {userData?.isAdmin && (
                 <button
@@ -316,12 +391,34 @@ const Index = () => {
 
         {/* Movie Carousels */}
         <div className="relative -mt-32 z-10 space-y-8 pb-20">
+          {/* Recently Added Movies */}
+          <MovieCarousel
+            title="Recently Added"
+            movies={recentMovies}
+            rowIndex={0}
+            onMovieSelect={handleMovieSelect}
+            watchlist={watchlist}
+            onToggleWatchlist={handleToggleWatchlist}
+          />
+
+          {/* Recently Added Anime - New Section */}
+          {featuredAndTrendingAnime.length > 0 && (
+            <MovieCarousel
+              title="Recently Added Anime"
+              movies={featuredAndTrendingAnime}
+              rowIndex={1}
+              onMovieSelect={handleMovieSelect}
+              watchlist={watchlist}
+              onToggleWatchlist={handleToggleWatchlist}
+            />
+          )}
+
           {/* Recently Watched - Only show if user has watched movies */}
           {recentlyWatched.length > 0 && (
             <MovieCarousel
               title="Recently Watched"
               movies={recentlyWatched}
-              rowIndex={0}
+              rowIndex={featuredAndTrendingAnime.length > 0 ? 2 : 1}
               onMovieSelect={handleMovieSelect}
               watchlist={watchlist}
               onToggleWatchlist={handleToggleWatchlist}
@@ -333,7 +430,7 @@ const Index = () => {
             <MovieCarousel
               title="Trending Now"
               movies={trendingMovies}
-              rowIndex={recentlyWatched.length > 0 ? 1 : 0}
+              rowIndex={featuredAndTrendingAnime.length > 0 ? 3 : 2}
               onMovieSelect={handleMovieSelect}
               watchlist={watchlist}
               onToggleWatchlist={handleToggleWatchlist}
@@ -345,7 +442,7 @@ const Index = () => {
             <MovieCarousel
               title="Anime Collection"
               movies={animeMovies}
-              rowIndex={recentlyWatched.length > 0 ? 2 : 1}
+              rowIndex={featuredAndTrendingAnime.length > 0 ? 4 : 3}
               onMovieSelect={handleMovieSelect}
               watchlist={watchlist}
               onToggleWatchlist={handleToggleWatchlist}
@@ -357,7 +454,7 @@ const Index = () => {
             <MovieCarousel
               title="Action Movies"
               movies={actionMovies}
-              rowIndex={recentlyWatched.length > 0 ? 3 : 2}
+              rowIndex={featuredAndTrendingAnime.length > 0 ? 5 : 4}
               onMovieSelect={handleMovieSelect}
               watchlist={watchlist}
               onToggleWatchlist={handleToggleWatchlist}
@@ -369,29 +466,19 @@ const Index = () => {
             <MovieCarousel
               title="Sci-Fi Collection"
               movies={sciFiMovies}
-              rowIndex={recentlyWatched.length > 0 ? 4 : 3}
+              rowIndex={featuredAndTrendingAnime.length > 0 ? 6 : 5}
               onMovieSelect={handleMovieSelect}
               watchlist={watchlist}
               onToggleWatchlist={handleToggleWatchlist}
             />
           )}
           
-          {/* Recent Movies */}
-          <MovieCarousel
-            title="Recently Added"
-            movies={recentMovies}
-            rowIndex={recentlyWatched.length > 0 ? 5 : 4}
-            onMovieSelect={handleMovieSelect}
-            watchlist={watchlist}
-            onToggleWatchlist={handleToggleWatchlist}
-          />
-          
           {/* Top Rated Movies */}
           {topRatedMovies.length > 0 && (
             <MovieCarousel
               title="Top Rated"
               movies={topRatedMovies}
-              rowIndex={recentlyWatched.length > 0 ? 6 : 5}
+              rowIndex={featuredAndTrendingAnime.length > 0 ? 7 : 6}
               onMovieSelect={handleMovieSelect}
               watchlist={watchlist}
               onToggleWatchlist={handleToggleWatchlist}
@@ -403,7 +490,7 @@ const Index = () => {
             <MovieCarousel
               title="All Movies"
               movies={movies}
-              rowIndex={recentlyWatched.length > 0 ? 2 : 1}
+              rowIndex={featuredAndTrendingAnime.length > 0 ? 3 : 2}
               onMovieSelect={handleMovieSelect}
               watchlist={watchlist}
               onToggleWatchlist={handleToggleWatchlist}
@@ -416,7 +503,7 @@ const Index = () => {
           isOpen={showSearch}
           onClose={() => setShowSearch(false)}
           onMovieSelect={handleMovieSelect}
-          movies={movies}
+          movies={[...movies, ...animes]}
         />
 
         <MovieDetailModal
