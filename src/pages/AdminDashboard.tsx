@@ -5,8 +5,9 @@ import { useNavigate } from 'react-router-dom';
 import { MovieUploadForm } from '../components/MovieUploadForm';
 import { AnimeUploadForm } from '../components/AnimeUploadForm';
 import { MovieManager } from '../components/MovieManager';
+import { AnimeManager } from '../components/AnimeManager';
 import { Button } from '../components/ui/button';
-import { LogOut, Upload, List, ArrowLeft, Film, Tv } from 'lucide-react';
+import { LogOut, Upload, List, ArrowLeft, Film, Tv, Settings } from 'lucide-react';
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('upload-movie');
@@ -71,13 +72,22 @@ const AdminDashboard = () => {
                   Upload Anime
                 </button>
                 <button
-                  onClick={() => setActiveTab('manage')}
+                  onClick={() => setActiveTab('manage-movies')}
                   className={`flex items-center gap-2 px-4 py-2 rounded transition-colors ${
-                    activeTab === 'manage' ? 'bg-red-600 text-white' : 'text-gray-300 hover:text-white'
+                    activeTab === 'manage-movies' ? 'bg-red-600 text-white' : 'text-gray-300 hover:text-white'
+                  }`}
+                >
+                  <Settings size={20} />
+                  Manage Movies
+                </button>
+                <button
+                  onClick={() => setActiveTab('manage-anime')}
+                  className={`flex items-center gap-2 px-4 py-2 rounded transition-colors ${
+                    activeTab === 'manage-anime' ? 'bg-red-600 text-white' : 'text-gray-300 hover:text-white'
                   }`}
                 >
                   <List size={20} />
-                  Manage Content
+                  Manage Anime
                 </button>
               </nav>
             </div>
@@ -113,8 +123,12 @@ const AdminDashboard = () => {
           </div>
         )}
 
-        {activeTab === 'manage' && (
+        {activeTab === 'manage-movies' && (
           <MovieManager onBack={() => setActiveTab('upload-movie')} />
+        )}
+
+        {activeTab === 'manage-anime' && (
+          <AnimeManager onBack={() => setActiveTab('upload-anime')} />
         )}
       </main>
     </div>
