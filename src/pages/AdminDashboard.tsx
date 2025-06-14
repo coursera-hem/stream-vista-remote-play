@@ -6,11 +6,13 @@ import { MovieUploadForm } from '../components/MovieUploadForm';
 import { AnimeUploadForm } from '../components/AnimeUploadForm';
 import { MovieManager } from '../components/MovieManager';
 import { AnimeManager } from '../components/AnimeManager';
+import { EpisodeManager } from '../components/EpisodeManager';
 import { Button } from '../components/ui/button';
-import { LogOut, ArrowLeft, Film, Tv, Settings, List } from 'lucide-react';
+import { LogOut, ArrowLeft, Film, Tv, Settings, List, Play } from 'lucide-react';
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('upload-movie');
+  const [selectedAnimeForEpisodes, setSelectedAnimeForEpisodes] = useState<{id: string, title: string} | null>(null);
   const { userData, logout } = useAuth();
   const navigate = useNavigate();
 
@@ -27,6 +29,11 @@ const AdminDashboard = () => {
 
   const handleBackToHome = () => {
     navigate('/');
+  };
+
+  const handleManageEpisodes = (animeId: string, animeTitle: string) => {
+    setSelectedAnimeForEpisodes({ id: animeId, title: animeTitle });
+    setActiveTab('manage-episodes');
   };
 
   if (!userData?.isAdmin) {
@@ -107,6 +114,17 @@ const AdminDashboard = () => {
               <List size={20} />
               Manage Anime
             </button>
+            {selectedAnimeForEpisodes && (
+              <button
+                onClick={() => setActiveTab('manage-episodes')}
+                className={`flex items-center gap-2 px-4 py-2 rounded transition-colors ${
+                  activeTab === 'manage-episodes' ? 'bg-red-600 text-white' : 'text-gray-300 hover:text-white hover:bg-gray-700'
+                }`}
+              >
+                <Play size={20} />
+                Manage Episodes
+              </button>
+            )}
           </nav>
         </div>
       </div>
@@ -132,7 +150,21 @@ const AdminDashboard = () => {
         )}
 
         {activeTab === 'manage-anime' && (
-          <AnimeManager onBack={() => setActiveTab('upload-anime')} />
+          <AnimeManager 
+            onBack={() => setActiveTab('upload-anime')}
+            onManageEpisodes={handleManageEpisodes}
+          />
+        )}
+
+        {activeTab === 'manage-episodes' && selectedAnimeForEpisodes && (
+          <EpisodeManager
+            animeId={selectedAnimeForEpisodes.id}
+            animeTitle={selectedAnimeForEpisodes.title}
+            onBack={() => {
+              setActiveTab('manage-anime');
+              setSelectedAnimeForEpisodes(null);
+            }}
+          />
         )}
       </main>
     </div>

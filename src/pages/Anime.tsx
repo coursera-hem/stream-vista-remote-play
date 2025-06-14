@@ -9,6 +9,7 @@ import { AnimeCard } from '../components/AnimeCard';
 import { AnimeEpisodeModal } from '../components/AnimeEpisodeModal';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { Episode } from '../types/Episode';
 
 interface FirebaseAnime {
   id: string;
@@ -79,11 +80,15 @@ const Anime = () => {
     setShowEpisodeModal(true);
   };
 
-  const handleEpisodePlay = (episodeNumber: number) => {
-    console.log(`Playing episode ${episodeNumber} of ${selectedAnime?.title}`);
+  const handleEpisodePlay = (episode: Episode) => {
+    console.log(`Playing episode ${episode.episodeNumber}: ${episode.title}`);
+    console.log('Episode video URL:', episode.videoUrl);
     // Here you can implement the logic to play the specific episode
     // For example, redirect to a video player with the episode URL
     setShowEpisodeModal(false);
+    
+    // Example: Open video in new tab
+    window.open(episode.videoUrl, '_blank');
   };
 
   if (loading) {
@@ -168,7 +173,7 @@ const Anime = () => {
         isOpen={showEpisodeModal}
         onClose={() => setShowEpisodeModal(false)}
         animeTitle={selectedAnime?.title || ''}
-        totalEpisodes={selectedAnime?.episodes || 0}
+        animeId={selectedAnime?.id || ''}
         animePoster={selectedAnime?.poster || ''}
         onEpisodePlay={handleEpisodePlay}
       />
