@@ -2,23 +2,29 @@
 import React, { useEffect } from 'react';
 import { X, Play, Plus, Check, Star } from 'lucide-react';
 
-interface Movie {
+interface AppMovie {
   id: string;
   title: string;
   poster: string;
-  backdrop: string;
+  backdrop?: string;
   year: number;
   genre: string;
   rating: number;
   duration: string;
-  description: string;
+  description?: string;
+  videoUrl?: string;
+  releaseYear?: number;
+  language?: string;
+  isTrending?: boolean;
+  isFeatured?: boolean;
+  views?: number;
 }
 
 interface MovieDetailModalProps {
-  movie: Movie | null;
+  movie: AppMovie | null;
   isOpen: boolean;
   onClose: () => void;
-  onPlay: (movie: Movie) => void;
+  onPlay: (movie: AppMovie) => void;
   isInWatchlist?: boolean;
   onToggleWatchlist?: (movieId: string) => void;
 }
@@ -57,7 +63,7 @@ export const MovieDetailModal: React.FC<MovieDetailModalProps> = ({
         {/* Header with backdrop */}
         <div className="relative h-64 md:h-80">
           <img
-            src={movie.backdrop}
+            src={movie.backdrop || movie.poster}
             alt={movie.title}
             className="w-full h-full object-cover rounded-t-xl"
           />
@@ -102,7 +108,7 @@ export const MovieDetailModal: React.FC<MovieDetailModalProps> = ({
               </div>
 
               <p className="text-gray-300 text-lg leading-relaxed mb-8">
-                {movie.description}
+                {movie.description || 'No description available'}
               </p>
 
               {/* Action buttons */}

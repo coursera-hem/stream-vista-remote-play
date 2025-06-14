@@ -159,10 +159,12 @@ const Index = () => {
       id: movie.id,
       title: movie.title,
       poster: movie.poster,
+      backdrop: movie.poster, // Add required backdrop property
       year: movie.year,
       genre: movie.genre,
       rating: movie.rating,
-      duration: movie.duration
+      duration: movie.duration,
+      description: 'No description available' // Add required description property
     };
     addToRecentlyWatched(recentMovie);
     setRecentlyWatched(getRecentlyWatched());

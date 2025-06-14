@@ -3,20 +3,28 @@ import React from 'react';
 import { useFocus } from './FocusProvider';
 import { Play, Plus, Check } from 'lucide-react';
 
-interface Movie {
+interface AppMovie {
   id: string;
   title: string;
   poster: string;
+  backdrop?: string;
   year: number;
   genre: string;
   rating: number;
   duration: string;
+  description?: string;
+  videoUrl?: string;
+  releaseYear?: number;
+  language?: string;
+  isTrending?: boolean;
+  isFeatured?: boolean;
+  views?: number;
 }
 
 interface MovieCardProps {
-  movie: Movie;
+  movie: AppMovie;
   focusId: string;
-  onSelect: (movie: Movie) => void;
+  onSelect: (movie: AppMovie) => void;
   isInWatchlist?: boolean;
   onToggleWatchlist?: (movieId: string) => void;
 }

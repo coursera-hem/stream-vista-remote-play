@@ -3,21 +3,29 @@ import React, { useRef } from 'react';
 import { MovieCard } from './MovieCard';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
-interface Movie {
+interface AppMovie {
   id: string;
   title: string;
   poster: string;
+  backdrop?: string;
   year: number;
   genre: string;
   rating: number;
   duration: string;
+  description?: string;
+  videoUrl?: string;
+  releaseYear?: number;
+  language?: string;
+  isTrending?: boolean;
+  isFeatured?: boolean;
+  views?: number;
 }
 
 interface MovieCarouselProps {
   title: string;
-  movies: Movie[];
+  movies: AppMovie[];
   rowIndex: number;
-  onMovieSelect: (movie: Movie) => void;
+  onMovieSelect: (movie: AppMovie) => void;
   watchlist?: string[];
   onToggleWatchlist?: (movieId: string) => void;
 }

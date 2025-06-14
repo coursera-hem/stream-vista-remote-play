@@ -2,22 +2,28 @@
 import React from 'react';
 import { Play, Info, Plus, Check } from 'lucide-react';
 
-interface Movie {
+interface AppMovie {
   id: string;
   title: string;
   poster: string;
-  backdrop: string;
+  backdrop?: string;
   year: number;
   genre: string;
   rating: number;
   duration: string;
-  description: string;
+  description?: string;
+  videoUrl?: string;
+  releaseYear?: number;
+  language?: string;
+  isTrending?: boolean;
+  isFeatured?: boolean;
+  views?: number;
 }
 
 interface HeroSectionProps {
-  featuredMovie: Movie;
-  onPlay: (movie: Movie) => void;
-  onMoreInfo: (movie: Movie) => void;
+  featuredMovie: AppMovie;
+  onPlay: (movie: AppMovie) => void;
+  onMoreInfo: (movie: AppMovie) => void;
   isInWatchlist?: boolean;
   onToggleWatchlist?: (movieId: string) => void;
 }
@@ -34,7 +40,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
       {/* Background image */}
       <div
         className="absolute inset-0 bg-cover bg-center"
-        style={{ backgroundImage: `url(${featuredMovie.backdrop})` }}
+        style={{ backgroundImage: `url(${featuredMovie.backdrop || featuredMovie.poster})` }}
       />
       
       {/* Gradient overlays */}
@@ -57,7 +63,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
         </div>
         
         <p className="text-xl mb-8 leading-relaxed opacity-90">
-          {featuredMovie.description}
+          {featuredMovie.description || 'No description available'}
         </p>
         
         {/* Action buttons */}
