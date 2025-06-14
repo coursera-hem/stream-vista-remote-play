@@ -18,7 +18,26 @@ interface VideoPlayerProps {
   onBack: () => void;
 }
 
-// Function to convert Google Drive share link to streamable formats
+// Convert Google Drive share link to embeddable format
+const getEmbedUrl = (driveLink: string): string => {
+  if (!driveLink) return '';
+  
+  let fileId = '';
+  
+  if (driveLink.includes('/file/d/')) {
+    fileId = driveLink.split('/file/d/')[1].split('/')[0];
+  } else if (driveLink.includes('id=')) {
+    fileId = driveLink.split('id=')[1].split('&')[0];
+  }
+  
+  if (fileId) {
+    return `https://drive.google.com/file/d/${fileId}/preview`;
+  }
+  
+  return driveLink;
+};
+
+// Function to convert Google Drive share link to direct download formats
 const getGoogleDriveUrls = (url: string): string[] => {
   console.log('Processing Google Drive URL:', url);
   
@@ -53,8 +72,13 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ movie, onBack }) => {
   const [showControls, setShowControls] = useState(true);
   const [videoError, setVideoError] = useState(false);
   const [currentUrlIndex, setCurrentUrlIndex] = useState(0);
+  const [videoLoading, setVideoLoading] = useState(true);
   const videoRef = useRef<HTMLVideoElement>(null);
   const controlsTimeoutRef = useRef<NodeJS.Timeout>();
+
+  // Check if it's a Firebase video or Google Drive video
+  const isFirebaseVideo = movie.videoUrl?.includes('firebasestorage.googleapis.com') || false;
+  const isGoogleDriveVideo = movie.videoUrl?.includes('drive.google.com') || false;
 
   // Get all possible URLs for the video
   const videoUrls = movie.videoUrl ? getGoogleDriveUrls(movie.videoUrl) : [];
@@ -65,6 +89,8 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ movie, onBack }) => {
   console.log('Current video source:', currentVideoSrc);
   console.log('Available URLs:', allUrls);
   console.log('Current URL index:', currentUrlIndex);
+  console.log('Is Firebase video:', isFirebaseVideo);
+  console.log('Is Google Drive video:', isGoogleDriveVideo);
 
   // Try next URL when current one fails
   const tryNextUrl = () => {
@@ -72,15 +98,44 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ movie, onBack }) => {
       console.log('Trying next URL...');
       setCurrentUrlIndex(currentUrlIndex + 1);
       setVideoError(false);
+      setVideoLoading(true);
     } else {
       console.log('All URLs failed');
       setVideoError(true);
+      setVideoLoading(false);
     }
+  };
+
+  const handleVideoLoad = () => {
+    setVideoLoading(false);
+    setVideoError(false);
+    if (videoRef.current) {
+      setDuration(videoRef.current.duration);
+    }
+    console.log('Video loaded successfully');
+  };
+
+  const handleVideoError = () => {
+    console.error('Video loading error for URL:', currentVideoSrc);
+    setVideoLoading(false);
+    tryNextUrl();
+  };
+
+  const handleIframeLoad = () => {
+    setVideoLoading(false);
+    setVideoError(false);
+    console.log('Iframe loaded successfully');
+  };
+
+  const handleIframeError = () => {
+    console.error('Iframe loading error for URL:', currentVideoSrc);
+    setVideoLoading(false);
+    tryNextUrl();
   };
 
   useEffect(() => {
     const video = videoRef.current;
-    if (!video) return;
+    if (!video || !isFirebaseVideo) return;
 
     const updateTime = () => {
       if (video.currentTime && !isNaN(video.currentTime)) {
@@ -96,34 +151,24 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ movie, onBack }) => {
       }
     };
 
-    const handleError = (e: Event) => {
-      console.error('Video loading error for URL:', currentVideoSrc);
-      console.error('Error details:', e);
-      tryNextUrl();
-    };
-
-    const handleCanPlay = () => {
-      console.log('Video can play:', currentVideoSrc);
-      setVideoError(false);
-    };
-
     video.addEventListener('timeupdate', updateTime);
     video.addEventListener('loadedmetadata', updateDuration);
-    video.addEventListener('error', handleError);
-    video.addEventListener('canplay', handleCanPlay);
+    video.addEventListener('loadeddata', handleVideoLoad);
+    video.addEventListener('error', handleVideoError);
 
     return () => {
       video.removeEventListener('timeupdate', updateTime);
       video.removeEventListener('loadedmetadata', updateDuration);
-      video.removeEventListener('error', handleError);
-      video.removeEventListener('canplay', handleCanPlay);
+      video.removeEventListener('loadeddata', handleVideoLoad);
+      video.removeEventListener('error', handleVideoError);
     };
-  }, [currentVideoSrc, currentUrlIndex]);
+  }, [currentVideoSrc, currentUrlIndex, isFirebaseVideo]);
 
   // Reset when movie changes
   useEffect(() => {
     setCurrentUrlIndex(0);
     setVideoError(false);
+    setVideoLoading(true);
     setIsPlaying(false);
     setCurrentTime(0);
     setDuration(0);
@@ -162,7 +207,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ movie, onBack }) => {
 
   const togglePlay = () => {
     const video = videoRef.current;
-    if (!video || videoError) return;
+    if (!video || videoError || !isFirebaseVideo) return;
 
     if (isPlaying) {
       video.pause();
@@ -178,7 +223,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ movie, onBack }) => {
 
   const toggleMute = () => {
     const video = videoRef.current;
-    if (!video) return;
+    if (!video || !isFirebaseVideo) return;
 
     video.muted = !isMuted;
     setIsMuted(!isMuted);
@@ -187,7 +232,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ movie, onBack }) => {
 
   const seek = (seconds: number) => {
     const video = videoRef.current;
-    if (!video || !duration || isNaN(duration)) return;
+    if (!video || !duration || isNaN(duration) || !isFirebaseVideo) return;
 
     const newTime = Math.max(0, Math.min(duration, video.currentTime + seconds));
     video.currentTime = newTime;
@@ -196,8 +241,8 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ movie, onBack }) => {
 
   const handleProgressClick = (e: React.MouseEvent<HTMLDivElement>) => {
     const video = videoRef.current;
-    if (!video || !duration || isNaN(duration) || duration <= 0) {
-      console.log('Cannot seek: video duration not available');
+    if (!video || !duration || isNaN(duration) || duration <= 0 || !isFirebaseVideo) {
+      console.log('Cannot seek: video duration not available or not Firebase video');
       return;
     }
 
@@ -236,8 +281,6 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ movie, onBack }) => {
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   };
 
-  const isGoogleDriveUrl = movie.videoUrl?.includes('drive.google.com');
-
   return (
     <div className="fixed inset-0 bg-black z-50 flex flex-col">
       {/* Video */}
@@ -246,11 +289,20 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ movie, onBack }) => {
         onClick={showControlsTemporarily}
         onMouseMove={showControlsTemporarily}
       >
+        {videoLoading && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black z-10">
+            <div className="text-center text-white">
+              <div className="w-8 h-8 border-4 border-white border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
+              <p>Loading video...</p>
+            </div>
+          </div>
+        )}
+
         {videoError ? (
           <div className="w-full h-full flex items-center justify-center">
             <div className="text-center max-w-md">
               <p className="text-white text-xl mb-4">Video could not be loaded</p>
-              {isGoogleDriveUrl ? (
+              {isGoogleDriveVideo ? (
                 <div className="text-gray-400 mb-6">
                   <p className="mb-2">This appears to be a Google Drive link.</p>
                   <p className="mb-2">Common issues:</p>
@@ -273,17 +325,35 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ movie, onBack }) => {
             </div>
           </div>
         ) : (
-          <video
-            ref={videoRef}
-            src={currentVideoSrc}
-            className="w-full h-full object-contain"
-            onClick={togglePlay}
-            crossOrigin="anonymous"
-          />
+          <>
+            {isFirebaseVideo ? (
+              <video
+                ref={videoRef}
+                src={currentVideoSrc}
+                className="w-full h-full object-contain"
+                onClick={togglePlay}
+                crossOrigin="anonymous"
+                preload="metadata"
+                onPlay={() => setIsPlaying(true)}
+                onPause={() => setIsPlaying(false)}
+              />
+            ) : (
+              <iframe
+                src={getEmbedUrl(movie.videoUrl || '')}
+                className="w-full h-full"
+                frameBorder="0"
+                allowFullScreen
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                title={movie.title}
+                onLoad={handleIframeLoad}
+                onError={handleIframeError}
+              />
+            )}
+          </>
         )}
 
-        {/* Controls overlay */}
-        {!videoError && (
+        {/* Controls overlay - Only show for Firebase videos */}
+        {!videoError && isFirebaseVideo && (
           <div
             className={`absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/50 transition-opacity duration-300 ${
               showControls ? 'opacity-100' : 'opacity-0'
@@ -380,6 +450,24 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ movie, onBack }) => {
                 >
                   <Maximize className="w-5 h-5 text-white" />
                 </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Simple overlay for Google Drive videos */}
+        {!videoError && !isFirebaseVideo && (
+          <div className="absolute top-0 left-0 right-0 p-6 bg-gradient-to-b from-black/80 to-transparent">
+            <div className="flex items-center gap-4">
+              <button
+                onClick={onBack}
+                className="w-12 h-12 bg-black/60 hover:bg-black/80 rounded-full flex items-center justify-center transition-colors"
+              >
+                <ArrowLeft className="w-6 h-6 text-white" />
+              </button>
+              <div>
+                <h1 className="text-2xl font-bold text-white">{movie.title}</h1>
+                <p className="text-gray-300">{movie.year} • {movie.genre}</p>
               </div>
             </div>
           </div>
