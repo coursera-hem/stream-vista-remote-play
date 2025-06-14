@@ -2,7 +2,6 @@
 import React, { useState, useEffect } from 'react';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../config/firebase';
-import { Navigation } from '../components/Navigation';
 import { Sidebar } from '../components/Sidebar';
 import { SearchModal } from '../components/SearchModal';
 import { LoginModal } from '../components/LoginModal';
@@ -32,7 +31,7 @@ const Anime = () => {
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [animes, setAnimes] = useState<FirebaseAnime[]>([]);
   const [loading, setLoading] = useState(true);
-  const { currentUser, logout, userData } = useAuth();
+  const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -75,21 +74,13 @@ const Anime = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-black text-white">
-        <Navigation
-          onSearch={() => setShowSearchModal(true)}
-          onLogin={() => setShowLoginModal(true)}
-          isLoggedIn={!!currentUser}
-          onLogout={handleLogout}
-          currentUser={userData ? { name: userData.name, email: userData.email } : undefined}
-        />
-        
         <Sidebar
           onLogout={handleLogout}
           isLoggedIn={!!currentUser}
           onLogin={() => setShowLoginModal(true)}
         />
 
-        <main className="pt-20 px-6">
+        <main className="px-6 py-8">
           <div className="max-w-7xl mx-auto">
             <div className="flex items-center justify-center py-20">
               <div className="text-white text-xl">Loading anime collection...</div>
@@ -102,21 +93,13 @@ const Anime = () => {
 
   return (
     <div className="min-h-screen bg-black text-white">
-      <Navigation
-        onSearch={() => setShowSearchModal(true)}
-        onLogin={() => setShowLoginModal(true)}
-        isLoggedIn={!!currentUser}
-        onLogout={handleLogout}
-        currentUser={userData ? { name: userData.name, email: userData.email } : undefined}
-      />
-      
       <Sidebar
         onLogout={handleLogout}
         isLoggedIn={!!currentUser}
         onLogin={() => setShowLoginModal(true)}
       />
 
-      <main className="pt-20 px-6">
+      <main className="px-6 py-8">
         <div className="max-w-7xl mx-auto">
           <h1 className="text-4xl font-bold mb-8">Anime Collection</h1>
           
