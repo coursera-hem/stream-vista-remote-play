@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { X, Play, Clock, Calendar } from 'lucide-react';
-import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
+import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { Episode } from '../types/Episode';
 
@@ -36,20 +36,38 @@ export const AnimeEpisodeModal: React.FC<AnimeEpisodeModalProps> = ({
     try {
       console.log('Fetching episodes for anime:', animeId);
       const episodesRef = collection(db, 'episodes');
+      // Removed orderBy to avoid composite index requirement
       const q = query(
         episodesRef,
-        where('animeId', '==', animeId),
-        orderBy('episodeNumber', 'asc')
+        where('animeId', '==', animeId)
       );
       const querySnapshot = await getDocs(q);
-      const episodeList = querySnapshot.docs.map(doc => {
+      
+      const episodeList: Episode[] = [];
+      querySnapshot.docs.forEach(doc => {
         const data = doc.data();
         console.log('Episode data:', { id: doc.id, ...data });
-        return {
+        
+        const episode: Episode = {
           id: doc.id,
-          ...data
+          animeId: data.animeId,
+          episodeNumber: data.episodeNumber,
+          title: data.title,
+          description: data.description || '',
+          videoUrl: data.videoUrl,
+          thumbnail: data.thumbnail,
+          duration: data.duration,
+          airDate: data.airDate ? data.airDate.toDate() : undefined,
+          views: data.views || 0,
+          createdAt: data.createdAt ? data.createdAt.toDate() : new Date(),
+          updatedAt: data.updatedAt ? data.updatedAt.toDate() : new Date()
         };
-      }) as Episode[];
+        
+        episodeList.push(episode);
+      });
+      
+      // Sort episodes by episode number on the client side
+      episodeList.sort((a, b) => a.episodeNumber - b.episodeNumber);
       
       console.log('Total episodes fetched:', episodeList.length);
       setEpisodes(episodeList);
