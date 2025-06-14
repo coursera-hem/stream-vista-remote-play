@@ -74,8 +74,33 @@ const Series = () => {
   };
 
   const handleSeriesPlay = (series: FirebaseSeries) => {
-    console.log('Playing series:', series.title);
-    // You can implement video player modal here
+    console.log('Playing series directly:', series.title);
+    
+    // Create a movie-like object for the VideoPlayer component
+    const seriesAsMovie = {
+      id: series.id,
+      title: series.title,
+      poster: series.poster,
+      year: series.releaseYear,
+      genre: series.genre,
+      rating: series.rating,
+      duration: '45min', // Default duration for series
+      videoUrl: series.videoUrl
+    };
+
+    setSelectedSeries(series);
+    setSelectedEpisode({
+      id: series.id,
+      seriesId: series.id,
+      episodeNumber: 1,
+      title: series.title,
+      description: series.description,
+      videoUrl: series.videoUrl,
+      duration: '45min',
+      thumbnail: series.poster,
+      uploadedAt: new Date()
+    });
+    setShowVideoPlayer(true);
   };
 
   const handleSeriesCardClick = (series: FirebaseSeries) => {
@@ -87,7 +112,6 @@ const Series = () => {
     console.log(`Playing episode ${episode.episodeNumber}: ${episode.title}`);
     console.log('Episode video URL:', episode.videoUrl);
     
-    // Create a movie-like object for the VideoPlayer component
     setSelectedEpisode(episode);
     setShowEpisodeModal(false);
     setShowVideoPlayer(true);
@@ -96,13 +120,15 @@ const Series = () => {
   const handleVideoPlayerBack = () => {
     setShowVideoPlayer(false);
     setSelectedEpisode(null);
-    setShowEpisodeModal(true);
+    setSelectedSeries(null);
   };
 
   // Convert Episode to Movie format for VideoPlayer
   const episodeAsMovie = selectedEpisode && selectedSeries ? {
     id: selectedEpisode.id,
-    title: `${selectedSeries.title} - Episode ${selectedEpisode.episodeNumber}: ${selectedEpisode.title}`,
+    title: selectedEpisode.episodeNumber === 1 && selectedEpisode.title === selectedSeries.title 
+      ? selectedSeries.title
+      : `${selectedSeries.title} - Episode ${selectedEpisode.episodeNumber}: ${selectedEpisode.title}`,
     poster: selectedSeries.poster,
     year: selectedSeries.releaseYear,
     genre: selectedSeries.genre,
