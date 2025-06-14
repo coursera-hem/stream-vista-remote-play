@@ -3,8 +3,9 @@ import React, { useState, useEffect } from 'react';
 import { collection, getDocs, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { Button } from './ui/button';
-import { Trash2, ArrowLeft } from 'lucide-react';
+import { Trash2, ArrowLeft, Plus, Settings } from 'lucide-react';
 import { useToast } from '../hooks/use-toast';
+import { AnimeUploadForm } from './AnimeUploadForm';
 
 interface FirebaseAnime {
   id: string;
@@ -27,6 +28,7 @@ export const AnimeManager: React.FC<AnimeManagerProps> = ({ onBack }) => {
   const [animes, setAnimes] = useState<FirebaseAnime[]>([]);
   const [selectedAnimes, setSelectedAnimes] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showUploadForm, setShowUploadForm] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -122,6 +124,26 @@ export const AnimeManager: React.FC<AnimeManagerProps> = ({ onBack }) => {
     }
   };
 
+  if (showUploadForm) {
+    return (
+      <div>
+        <div className="flex items-center gap-4 mb-6">
+          <Button
+            onClick={() => setShowUploadForm(false)}
+            variant="outline"
+            size="sm"
+            className="border-gray-600 text-white hover:bg-gray-800"
+          >
+            <ArrowLeft size={16} className="mr-2" />
+            Back to Anime List
+          </Button>
+          <h2 className="text-2xl font-bold text-white">Upload New Anime</h2>
+        </div>
+        <AnimeUploadForm />
+      </div>
+    );
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -146,6 +168,14 @@ export const AnimeManager: React.FC<AnimeManagerProps> = ({ onBack }) => {
           <h2 className="text-2xl font-bold text-white">Manage Animes ({animes.length})</h2>
         </div>
         <div className="flex items-center gap-4">
+          <Button
+            onClick={() => setShowUploadForm(true)}
+            className="bg-red-600 hover:bg-red-700 flex items-center gap-2"
+            size="sm"
+          >
+            <Plus size={16} />
+            Upload Anime
+          </Button>
           {animes.length > 0 && (
             <Button
               onClick={handleSelectAll}
@@ -177,10 +207,11 @@ export const AnimeManager: React.FC<AnimeManagerProps> = ({ onBack }) => {
           <p className="text-gray-400 text-xl mb-4">No animes found in database</p>
           <p className="text-gray-500 mb-6">Upload some animes first to manage them here.</p>
           <Button
-            onClick={() => onBack()}
+            onClick={() => setShowUploadForm(true)}
             className="bg-red-600 hover:bg-red-700"
           >
-            Upload Animes
+            <Plus size={16} className="mr-2" />
+            Upload Anime
           </Button>
         </div>
       ) : (

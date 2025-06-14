@@ -67,7 +67,7 @@ const AdminDashboard = () => {
               Manage Episodes - {selectedAnime.title}
             </h1>
           </div>
-          <EpisodeManager animeId={selectedAnime.id} />
+          <EpisodeManager animeId={selectedAnime.id} onBack={handleBackToAnime} />
         </div>
       </div>
     );
@@ -142,10 +142,7 @@ const AdminDashboard = () => {
               <p className="text-gray-400 mb-6">
                 Upload, edit, and manage anime series in your collection.
               </p>
-              <AnimeManager 
-                onBack={() => navigate('/')} 
-                onManageEpisodes={handleManageEpisodes}
-              />
+              <AnimeManager onBack={() => navigate('/')} />
             </div>
           </TabsContent>
 
@@ -159,7 +156,7 @@ const AdminDashboard = () => {
                 Select an anime from the Anime tab to manage its episodes, or use the quick episode management below.
               </p>
               {selectedAnime ? (
-                <EpisodeManager animeId={selectedAnime.id} />
+                <EpisodeManager animeId={selectedAnime.id} onBack={handleBackToAnime} />
               ) : (
                 <div className="text-center py-12">
                   <PlaySquare className="w-16 h-16 text-gray-600 mx-auto mb-4" />
