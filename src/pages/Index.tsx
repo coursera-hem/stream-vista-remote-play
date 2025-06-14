@@ -1,10 +1,9 @@
-
 import React, { useState, useEffect } from 'react';
 import { collection, getDocs, query, orderBy } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { FocusProvider } from '../components/FocusProvider';
 import { Navigation } from '../components/Navigation';
-import { HeroSection } from '../components/HeroSection';
+import { HeroCarousel } from '../components/HeroCarousel';
 import { MovieCarousel } from '../components/MovieCarousel';
 import { SearchModal } from '../components/SearchModal';
 import { MovieDetailModal } from '../components/MovieDetailModal';
@@ -71,7 +70,6 @@ const Index = () => {
   const [movies, setMovies] = useState<AppMovie[]>([]);
   const [animes, setAnimes] = useState<AppMovie[]>([]);
   const [loading, setLoading] = useState(true);
-  const [featuredMovie, setFeaturedMovie] = useState<AppMovie | null>(null);
 
   const { currentUser, userData, logout } = useAuth();
   const navigate = useNavigate();
@@ -139,11 +137,6 @@ const Index = () => {
       console.log('Total movies loaded:', movieList.length);
       
       setMovies(movieList);
-
-      // Set featured movie (first movie marked as featured, or first movie if none)
-      const featured = movieList.find(movie => movie.isFeatured) || movieList[0];
-      console.log('Featured movie selected:', featured);
-      setFeaturedMovie(featured || null);
 
       toast({
         title: "Movies Loaded",
@@ -311,6 +304,16 @@ const Index = () => {
   // Filter anime for the new section (featured and trending)
   const featuredAndTrendingAnime = animes.filter(anime => anime.isFeatured || anime.isTrending);
 
+  // Get featured items for hero carousel (combine featured movies and anime)
+  const featuredMovies = movies.filter(movie => movie.isFeatured);
+  const featuredAnimes = animes.filter(anime => anime.isFeatured);
+  const allFeaturedItems = [...featuredMovies, ...featuredAnimes];
+
+  // If no featured items, use top-rated or most recent items
+  const heroItems = allFeaturedItems.length > 0 
+    ? allFeaturedItems 
+    : [...topRatedMovies.slice(0, 3), ...featuredAndTrendingAnime.slice(0, 2)];
+
   console.log('Current movies state:', movies);
   console.log('Movies length:', movies.length);
   console.log('Loading state:', loading);
@@ -379,13 +382,13 @@ const Index = () => {
           currentUser={userData ? { name: userData.name, email: userData.email } : undefined}
         />
 
-        {/* Hero Section */}
-        {featuredMovie && (
-          <HeroSection
-            featuredMovie={featuredMovie}
+        {/* Hero Carousel Section */}
+        {heroItems.length > 0 && (
+          <HeroCarousel
+            featuredItems={heroItems}
             onPlay={handlePlayMovie}
             onMoreInfo={handleMovieSelect}
-            isInWatchlist={watchlist.includes(featuredMovie.id)}
+            watchlist={watchlist}
             onToggleWatchlist={handleToggleWatchlist}
           />
         )}
