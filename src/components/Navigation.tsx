@@ -24,6 +24,12 @@ export const Navigation: React.FC<NavigationProps> = ({
   const { userData } = useAuth();
   const navigate = useNavigate();
 
+  const handleAdminClick = () => {
+    if (userData?.isAdmin) {
+      navigate('/admin');
+    }
+  };
+
   return (
     <nav className="fixed top-0 left-0 right-0 z-40 bg-black/90 backdrop-blur-sm border-b border-gray-800">
       <div className="flex items-center justify-between px-6 py-4">
@@ -66,16 +72,18 @@ export const Navigation: React.FC<NavigationProps> = ({
               <Tv className="w-4 h-4" />
               Anime
             </button>
-            <button 
-              onClick={() => navigate('/mylist')}
-              className="text-white hover:text-gray-300 transition-colors flex items-center gap-2"
-            >
-              <Bookmark className="w-4 h-4" />
-              My List
-            </button>
+            {isLoggedIn && (
+              <button 
+                onClick={() => navigate('/mylist')}
+                className="text-white hover:text-gray-300 transition-colors flex items-center gap-2"
+              >
+                <Bookmark className="w-4 h-4" />
+                My List
+              </button>
+            )}
             {userData?.isAdmin && (
               <button 
-                onClick={() => navigate('/admin')}
+                onClick={handleAdminClick}
                 className="text-white hover:text-gray-300 transition-colors flex items-center gap-2"
               >
                 <UserCog className="w-4 h-4" />

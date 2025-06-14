@@ -15,7 +15,7 @@ import { ArrowLeft, Film, Tv, PlaySquare, Upload, Plus } from 'lucide-react';
 import { useToast } from '../hooks/use-toast';
 
 const AdminDashboard = () => {
-  const { currentUser, userData } = useAuth();
+  const { currentUser, userData, loading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [selectedAnime, setSelectedAnime] = useState<{ id: string; title: string } | null>(null);
@@ -24,22 +24,46 @@ const AdminDashboard = () => {
   const [showAnimeUpload, setShowAnimeUpload] = useState(false);
   const [showSeriesUpload, setShowSeriesUpload] = useState(false);
 
+  // Immediate redirect for unauthorized access
   useEffect(() => {
+    if (loading) return; // Wait for auth to load
+
     if (!currentUser) {
-      navigate('/signin');
+      console.log('No current user, redirecting to signin');
+      toast({
+        title: "Access Denied",
+        description: "Please sign in to access the admin panel.",
+        variant: "destructive"
+      });
+      navigate('/signin', { replace: true });
       return;
     }
 
     if (!userData?.isAdmin) {
+      console.log('User is not admin, redirecting to home');
       toast({
         title: "Access Denied",
         description: "You don't have permission to access the admin dashboard.",
         variant: "destructive"
       });
-      navigate('/');
+      navigate('/', { replace: true });
       return;
     }
-  }, [currentUser, userData, navigate, toast]);
+  }, [currentUser, userData, loading, navigate, toast]);
+
+  // Show loading state while checking authentication
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="text-white text-xl">Verifying access...</div>
+      </div>
+    );
+  }
+
+  // Don't render anything if not authorized
+  if (!currentUser || !userData?.isAdmin) {
+    return null;
+  }
 
   const handleManageEpisodes = (animeId: string, animeTitle: string) => {
     console.log('Managing episodes for anime:', { animeId, animeTitle });
