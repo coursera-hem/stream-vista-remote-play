@@ -9,7 +9,6 @@ import { SearchModal } from '../components/SearchModal';
 import { MovieDetailModal } from '../components/MovieDetailModal';
 import { LoginModal } from '../components/LoginModal';
 import { VideoPlayer } from '../components/VideoPlayer';
-import { CustomLoader } from '../components/CustomLoader';
 import { useAuth } from '../contexts/AuthContext';
 import { addToRecentlyWatched, getRecentlyWatched } from '../services/recentlyWatched';
 import { useNavigate } from 'react-router-dom';
@@ -330,7 +329,11 @@ const Index = () => {
   }
 
   if (loading) {
-    return <CustomLoader message="Loading your entertainment..." />;
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="text-white text-xl">Loading content...</div>
+      </div>
+    );
   }
 
   if (movies.length === 0 && animes.length === 0) {
