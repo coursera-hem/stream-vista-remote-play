@@ -8,9 +8,9 @@ export interface Movie {
   genre: string;
   rating: number;
   duration: string;
-  description: string;
+  description?: string;
   videoUrl?: string;
-  releaseYear?: number | { _type: string; value: string };
+  releaseYear?: number;
   language?: string;
   isTrending?: boolean;
   isFeatured?: boolean;
