@@ -233,8 +233,39 @@ export const FocusProvider: React.FC<FocusProviderProps> = ({ children }) => {
     }
   }, [focusedElement]);
 
+  const handleElementClick = useCallback(() => {
+    if (!focusedElement) {
+      console.log('No focused element to click');
+      return;
+    }
+
+    console.log('Attempting to click element:', focusedElement);
+    const element = document.getElementById(focusedElement);
+    
+    if (!element) {
+      console.log('Element not found:', focusedElement);
+      return;
+    }
+
+    console.log('Element found, triggering click');
+    
+    // Create and dispatch a proper click event
+    const clickEvent = new MouseEvent('click', {
+      bubbles: true,
+      cancelable: true,
+      view: window
+    });
+    
+    element.dispatchEvent(clickEvent);
+    
+    // Also try direct click as fallback
+    if (element.click) {
+      element.click();
+    }
+  }, [focusedElement]);
+
   const handleKeyPress = useCallback((e: KeyboardEvent) => {
-    console.log('Key pressed:', e.key);
+    console.log('Key pressed:', e.key, 'Focused element:', focusedElement);
     
     switch (e.key) {
       case 'ArrowUp':
@@ -256,21 +287,27 @@ export const FocusProvider: React.FC<FocusProviderProps> = ({ children }) => {
       case 'Enter':
       case ' ':
         e.preventDefault();
-        if (focusedElement) {
-          const element = document.getElementById(focusedElement);
-          if (element) {
-            console.log('Clicking element:', focusedElement);
-            element.click();
-          }
-        }
+        console.log('Enter/Space pressed, attempting to click element');
+        handleElementClick();
+        break;
+      default:
+        console.log('Unhandled key:', e.key);
         break;
     }
-  }, [navigate, focusedElement]);
+  }, [navigate, handleElementClick, focusedElement]);
 
   useEffect(() => {
+    console.log('Adding keyboard event listener');
     window.addEventListener('keydown', handleKeyPress);
-    return () => window.removeEventListener('keydown', handleKeyPress);
+    return () => {
+      console.log('Removing keyboard event listener');
+      window.removeEventListener('keydown', handleKeyPress);
+    };
   }, [handleKeyPress]);
+
+  useEffect(() => {
+    console.log('Focused element changed to:', focusedElement);
+  }, [focusedElement]);
 
   return (
     <FocusContext.Provider value={{ focusedElement, setFocusedElement, navigate }}>
