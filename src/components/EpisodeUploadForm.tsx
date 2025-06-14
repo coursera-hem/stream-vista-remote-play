@@ -7,7 +7,7 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Textarea } from './ui/textarea';
-import { Upload, Video, Image as ImageIcon, Plus } from 'lucide-react';
+import { Upload, Video, Image as ImageIcon, Plus, Save } from 'lucide-react';
 import { useToast } from '../hooks/use-toast';
 import { CreateEpisodeData } from '../types/Episode';
 
@@ -15,12 +15,14 @@ interface EpisodeUploadFormProps {
   animeId: string;
   animeTitle: string;
   onEpisodeAdded: () => void;
+  onComplete?: () => void;
 }
 
 export const EpisodeUploadForm: React.FC<EpisodeUploadFormProps> = ({
   animeId,
   animeTitle,
-  onEpisodeAdded
+  onEpisodeAdded,
+  onComplete
 }) => {
   const [formData, setFormData] = useState({
     episodeNumber: 1,
@@ -33,6 +35,8 @@ export const EpisodeUploadForm: React.FC<EpisodeUploadFormProps> = ({
   
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
+  const [videoUploadMethod, setVideoUploadMethod] = useState<'file' | 'drive'>('file');
+  const [thumbnailUploadMethod, setThumbnailUploadMethod] = useState<'file' | 'url'>('file');
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [thumbnailUploading, setThumbnailUploading] = useState(false);
@@ -211,7 +215,7 @@ export const EpisodeUploadForm: React.FC<EpisodeUploadFormProps> = ({
     if (!formData.videoUrl) {
       toast({
         title: "Error",
-        description: "Please upload a video file",
+        description: "Please provide a video file or Google Drive link",
         variant: "destructive"
       });
       return;
@@ -287,6 +291,16 @@ export const EpisodeUploadForm: React.FC<EpisodeUploadFormProps> = ({
     }
   };
 
+  const handleSaveAndComplete = () => {
+    toast({
+      title: "Success",
+      description: "Episodes upload completed!"
+    });
+    if (onComplete) {
+      onComplete();
+    }
+  };
+
   return (
     <div className="bg-gray-900 rounded-lg p-6">
       <h3 className="text-xl font-bold text-white mb-4">
@@ -348,110 +362,221 @@ export const EpisodeUploadForm: React.FC<EpisodeUploadFormProps> = ({
           />
         </div>
 
-        {/* Video Upload */}
+        {/* Video Upload Method Selection */}
         <div>
-          <Label className="text-white flex items-center gap-2">
-            <Video size={16} />
-            Upload Episode Video *
-          </Label>
-          <div className="mt-2 border-2 border-dashed border-gray-600 rounded-lg p-6 text-center">
-            {uploading ? (
-              <div className="space-y-4">
-                <Video className="w-12 h-12 text-red-500 mx-auto animate-pulse" />
-                <p className="text-gray-300">Uploading video... {uploadProgress}%</p>
-                <div className="w-full bg-gray-700 rounded-full h-2 max-w-xs mx-auto">
-                  <div 
-                    className="bg-red-500 h-2 rounded-full transition-all duration-300"
-                    style={{ width: `${uploadProgress}%` }}
-                  />
-                </div>
-              </div>
-            ) : formData.videoUrl ? (
-              <div className="space-y-2">
-                <Video className="w-12 h-12 text-green-500 mx-auto" />
-                <p className="text-green-400">✅ Video uploaded successfully!</p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <Upload className="w-12 h-12 text-gray-400 mx-auto" />
-                <div>
-                  <p className="text-gray-300 mb-2">Drop your video file here or click to browse</p>
-                  <Input
-                    type="file"
-                    accept="video/*"
-                    onChange={(e) => {
-                      if (e.target.files && e.target.files[0]) {
-                        const file = e.target.files[0];
-                        setVideoFile(file);
-                        handleVideoUpload(file);
-                      }
-                    }}
-                    className="bg-gray-800 border-gray-600 text-white file:bg-gray-700 file:text-white file:border-0 file:rounded file:px-4 file:py-2 file:mr-4"
-                  />
-                </div>
-              </div>
-            )}
+          <Label className="text-white">Episode Video *</Label>
+          <div className="mt-2 flex gap-4">
+            <button
+              type="button"
+              onClick={() => setVideoUploadMethod('file')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-colors ${
+                videoUploadMethod === 'file'
+                  ? 'bg-red-600 border-red-600 text-white'
+                  : 'border-gray-600 text-gray-400 hover:border-red-500 hover:text-red-500'
+              }`}
+            >
+              <Upload size={16} />
+              <span>Choose File</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setVideoUploadMethod('drive')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-colors ${
+                videoUploadMethod === 'drive'
+                  ? 'bg-red-600 border-red-600 text-white'
+                  : 'border-gray-600 text-gray-400 hover:border-red-500 hover:text-red-500'
+              }`}
+            >
+              <Video size={16} />
+              <span>Google Drive Link</span>
+            </button>
           </div>
         </div>
 
-        {/* Thumbnail Upload */}
+        {/* Video Upload/Link */}
+        {videoUploadMethod === 'file' ? (
+          <div>
+            <Label className="text-white flex items-center gap-2">
+              <Video size={16} />
+              Upload Episode Video *
+            </Label>
+            <div className="mt-2 border-2 border-dashed border-gray-600 rounded-lg p-6 text-center">
+              {uploading ? (
+                <div className="space-y-4">
+                  <Video className="w-12 h-12 text-red-500 mx-auto animate-pulse" />
+                  <p className="text-gray-300">Uploading video... {uploadProgress}%</p>
+                  <div className="w-full bg-gray-700 rounded-full h-2 max-w-xs mx-auto">
+                    <div 
+                      className="bg-red-500 h-2 rounded-full transition-all duration-300"
+                      style={{ width: `${uploadProgress}%` }}
+                    />
+                  </div>
+                </div>
+              ) : formData.videoUrl ? (
+                <div className="space-y-2">
+                  <Video className="w-12 h-12 text-green-500 mx-auto" />
+                  <p className="text-green-400">✅ Video uploaded successfully!</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <Upload className="w-12 h-12 text-gray-400 mx-auto" />
+                  <div>
+                    <p className="text-gray-300 mb-2">Drop your video file here or click to browse</p>
+                    <Input
+                      type="file"
+                      accept="video/*"
+                      onChange={(e) => {
+                        if (e.target.files && e.target.files[0]) {
+                          const file = e.target.files[0];
+                          setVideoFile(file);
+                          handleVideoUpload(file);
+                        }
+                      }}
+                      className="bg-gray-800 border-gray-600 text-white file:bg-gray-700 file:text-white file:border-0 file:rounded file:px-4 file:py-2 file:mr-4"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        ) : (
+          <div>
+            <Label htmlFor="videoUrl" className="text-white flex items-center gap-2">
+              <Video size={16} />
+              Google Drive Link *
+            </Label>
+            <Input
+              id="videoUrl"
+              name="videoUrl"
+              type="url"
+              value={formData.videoUrl}
+              onChange={handleInputChange}
+              required
+              className="bg-gray-800 border-gray-600 text-white"
+              placeholder="https://drive.google.com/file/d/..."
+            />
+          </div>
+        )}
+
+        {/* Thumbnail Upload Method Selection */}
         <div>
-          <Label className="text-white flex items-center gap-2">
-            <ImageIcon size={16} />
-            Episode Thumbnail (optional)
-          </Label>
-          <div className="mt-2 border-2 border-dashed border-gray-600 rounded-lg p-6 text-center">
-            {thumbnailUploading ? (
-              <div className="space-y-4">
-                <ImageIcon className="w-12 h-12 text-blue-500 mx-auto animate-pulse" />
-                <p className="text-gray-300">Uploading thumbnail... {thumbnailProgress}%</p>
-                <div className="w-full bg-gray-700 rounded-full h-2 max-w-xs mx-auto">
-                  <div 
-                    className="bg-blue-500 h-2 rounded-full transition-all duration-300"
-                    style={{ width: `${thumbnailProgress}%` }}
-                  />
-                </div>
-              </div>
-            ) : formData.thumbnail ? (
-              <div className="space-y-2">
-                <img 
-                  src={formData.thumbnail} 
-                  alt="Episode thumbnail" 
-                  className="w-32 h-20 object-cover mx-auto rounded"
-                />
-                <p className="text-green-400">✅ Thumbnail uploaded!</p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <Upload className="w-8 h-8 text-gray-400 mx-auto" />
-                <div>
-                  <p className="text-gray-300 mb-2">Drop thumbnail here or click to browse</p>
-                  <Input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => {
-                      if (e.target.files && e.target.files[0]) {
-                        const file = e.target.files[0];
-                        setThumbnailFile(file);
-                        handleThumbnailUpload(file);
-                      }
-                    }}
-                    className="bg-gray-800 border-gray-600 text-white file:bg-gray-700 file:text-white file:border-0 file:rounded file:px-4 file:py-2 file:mr-4"
-                  />
-                </div>
-              </div>
-            )}
+          <Label className="text-white">Episode Thumbnail (optional)</Label>
+          <div className="mt-2 flex gap-4">
+            <button
+              type="button"
+              onClick={() => setThumbnailUploadMethod('file')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-colors ${
+                thumbnailUploadMethod === 'file'
+                  ? 'bg-blue-600 border-blue-600 text-white'
+                  : 'border-gray-600 text-gray-400 hover:border-blue-500 hover:text-blue-500'
+              }`}
+            >
+              <Upload size={16} />
+              <span>Choose File</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setThumbnailUploadMethod('url')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-colors ${
+                thumbnailUploadMethod === 'url'
+                  ? 'bg-blue-600 border-blue-600 text-white'
+                  : 'border-gray-600 text-gray-400 hover:border-blue-500 hover:text-blue-500'
+              }`}
+            >
+              <ImageIcon size={16} />
+              <span>Image Link</span>
+            </button>
           </div>
         </div>
 
-        <Button
-          type="submit"
-          disabled={uploading || thumbnailUploading || !formData.videoUrl}
-          className="w-full bg-red-600 hover:bg-red-700 flex items-center justify-center gap-2"
-        >
-          <Plus size={20} />
-          Add Episode
-        </Button>
+        {/* Thumbnail Upload/Link */}
+        {thumbnailUploadMethod === 'file' ? (
+          <div>
+            <Label className="text-white flex items-center gap-2">
+              <ImageIcon size={16} />
+              Upload Episode Thumbnail
+            </Label>
+            <div className="mt-2 border-2 border-dashed border-gray-600 rounded-lg p-6 text-center">
+              {thumbnailUploading ? (
+                <div className="space-y-4">
+                  <ImageIcon className="w-12 h-12 text-blue-500 mx-auto animate-pulse" />
+                  <p className="text-gray-300">Uploading thumbnail... {thumbnailProgress}%</p>
+                  <div className="w-full bg-gray-700 rounded-full h-2 max-w-xs mx-auto">
+                    <div 
+                      className="bg-blue-500 h-2 rounded-full transition-all duration-300"
+                      style={{ width: `${thumbnailProgress}%` }}
+                    />
+                  </div>
+                </div>
+              ) : formData.thumbnail ? (
+                <div className="space-y-2">
+                  <img 
+                    src={formData.thumbnail} 
+                    alt="Episode thumbnail" 
+                    className="w-32 h-20 object-cover mx-auto rounded"
+                  />
+                  <p className="text-green-400">✅ Thumbnail uploaded!</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <Upload className="w-8 h-8 text-gray-400 mx-auto" />
+                  <div>
+                    <p className="text-gray-300 mb-2">Drop thumbnail here or click to browse</p>
+                    <Input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => {
+                        if (e.target.files && e.target.files[0]) {
+                          const file = e.target.files[0];
+                          setThumbnailFile(file);
+                          handleThumbnailUpload(file);
+                        }
+                      }}
+                      className="bg-gray-800 border-gray-600 text-white file:bg-gray-700 file:text-white file:border-0 file:rounded file:px-4 file:py-2 file:mr-4"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        ) : (
+          <div>
+            <Label htmlFor="thumbnail" className="text-white flex items-center gap-2">
+              <ImageIcon size={16} />
+              Thumbnail Image URL
+            </Label>
+            <Input
+              id="thumbnail"
+              name="thumbnail"
+              type="url"
+              value={formData.thumbnail}
+              onChange={handleInputChange}
+              className="bg-gray-800 border-gray-600 text-white"
+              placeholder="https://example.com/thumbnail.jpg"
+            />
+          </div>
+        )}
+
+        <div className="space-y-3">
+          <Button
+            type="submit"
+            disabled={uploading || thumbnailUploading || !formData.videoUrl}
+            className="w-full bg-red-600 hover:bg-red-700 flex items-center justify-center gap-2"
+          >
+            <Plus size={20} />
+            Add Episode
+          </Button>
+
+          <Button
+            type="button"
+            onClick={handleSaveAndComplete}
+            variant="outline"
+            className="w-full border-gray-600 text-white hover:bg-gray-800 flex items-center justify-center gap-2"
+          >
+            <Save size={20} />
+            Save and Complete
+          </Button>
+        </div>
       </form>
     </div>
   );
