@@ -10,7 +10,7 @@ import { useNavigate } from 'react-router-dom';
 const Anime = () => {
   const [showSearchModal, setShowSearchModal] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
-  const { isAuthenticated, logout, userData } = useAuth();
+  const { currentUser, logout, userData } = useAuth();
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -23,14 +23,14 @@ const Anime = () => {
       <Navigation
         onSearch={() => setShowSearchModal(true)}
         onLogin={() => setShowLoginModal(true)}
-        isLoggedIn={isAuthenticated}
+        isLoggedIn={!!currentUser}
         onLogout={handleLogout}
-        currentUser={userData}
+        currentUser={userData ? { name: userData.name, email: userData.email } : undefined}
       />
       
       <Sidebar
         onLogout={handleLogout}
-        isLoggedIn={isAuthenticated}
+        isLoggedIn={!!currentUser}
         onLogin={() => setShowLoginModal(true)}
       />
 
@@ -83,13 +83,19 @@ const Anime = () => {
         </div>
       </main>
 
-      {showSearchModal && (
-        <SearchModal onClose={() => setShowSearchModal(false)} />
-      )}
+      <SearchModal
+        isOpen={showSearchModal}
+        onClose={() => setShowSearchModal(false)}
+        onMovieSelect={() => {}}
+        movies={[]}
+      />
 
-      {showLoginModal && (
-        <LoginModal onClose={() => setShowLoginModal(false)} />
-      )}
+      <LoginModal
+        isOpen={showLoginModal}
+        onClose={() => setShowLoginModal(false)}
+        onLogin={() => navigate('/signin')}
+        onRegister={() => navigate('/signup')}
+      />
     </div>
   );
 };
