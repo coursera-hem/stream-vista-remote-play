@@ -3,8 +3,9 @@ import React, { useState, useEffect } from 'react';
 import { collection, getDocs, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { Button } from './ui/button';
-import { Trash2, ArrowLeft } from 'lucide-react';
+import { Trash2, ArrowLeft, Edit } from 'lucide-react';
 import { useToast } from '../hooks/use-toast';
+import { MovieEditForm } from './MovieEditForm';
 
 interface FirebaseMovie {
   id: string;
@@ -25,6 +26,7 @@ interface MovieManagerProps {
 export const MovieManager: React.FC<MovieManagerProps> = ({ onBack }) => {
   const [movies, setMovies] = useState<FirebaseMovie[]>([]);
   const [selectedMovies, setSelectedMovies] = useState<string[]>([]);
+  const [editingMovie, setEditingMovie] = useState<FirebaseMovie | null>(null);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
@@ -121,6 +123,29 @@ export const MovieManager: React.FC<MovieManagerProps> = ({ onBack }) => {
     }
   };
 
+  const handleEditMovie = (movie: FirebaseMovie) => {
+    setEditingMovie(movie);
+  };
+
+  const handleSaveEdit = () => {
+    setEditingMovie(null);
+    fetchMovies();
+  };
+
+  const handleCancelEdit = () => {
+    setEditingMovie(null);
+  };
+
+  if (editingMovie) {
+    return (
+      <MovieEditForm
+        movie={editingMovie}
+        onSave={handleSaveEdit}
+        onCancel={handleCancelEdit}
+      />
+    );
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -187,10 +212,9 @@ export const MovieManager: React.FC<MovieManagerProps> = ({ onBack }) => {
           {movies.map((movie) => (
             <div
               key={movie.id}
-              className={`bg-gray-800 rounded-lg overflow-hidden cursor-pointer transition-all ${
+              className={`bg-gray-800 rounded-lg overflow-hidden transition-all ${
                 selectedMovies.includes(movie.id) ? 'ring-2 ring-red-500' : ''
               }`}
-              onClick={() => handleSelectMovie(movie.id)}
             >
               <div className="relative">
                 <img
@@ -217,6 +241,18 @@ export const MovieManager: React.FC<MovieManagerProps> = ({ onBack }) => {
                 <p className="text-gray-400 text-sm">{movie.genre} • {movie.releaseYear}</p>
                 <p className="text-gray-400 text-sm">{movie.duration}</p>
                 <p className="text-gray-500 text-xs mt-1">ID: {movie.id}</p>
+                
+                <div className="flex gap-2 mt-3">
+                  <Button
+                    onClick={() => handleEditMovie(movie)}
+                    variant="outline"
+                    size="sm"
+                    className="border-blue-600 text-blue-400 hover:bg-blue-600 hover:text-white flex-1"
+                  >
+                    <Edit size={14} className="mr-1" />
+                    Edit
+                  </Button>
+                </div>
               </div>
             </div>
           ))}

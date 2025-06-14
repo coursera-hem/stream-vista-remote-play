@@ -3,9 +3,10 @@ import React, { useState, useEffect } from 'react';
 import { collection, getDocs, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { Button } from './ui/button';
-import { Trash2, ArrowLeft, Plus, Settings } from 'lucide-react';
+import { Trash2, ArrowLeft, Plus, Settings, Edit } from 'lucide-react';
 import { useToast } from '../hooks/use-toast';
 import { AnimeUploadForm } from './AnimeUploadForm';
+import { AnimeEditForm } from './AnimeEditForm';
 
 interface FirebaseAnime {
   id: string;
@@ -22,11 +23,13 @@ interface FirebaseAnime {
 
 interface AnimeManagerProps {
   onBack: () => void;
+  onManageEpisodes: (animeId: string, animeTitle: string) => void;
 }
 
-export const AnimeManager: React.FC<AnimeManagerProps> = ({ onBack }) => {
+export const AnimeManager: React.FC<AnimeManagerProps> = ({ onBack, onManageEpisodes }) => {
   const [animes, setAnimes] = useState<FirebaseAnime[]>([]);
   const [selectedAnimes, setSelectedAnimes] = useState<string[]>([]);
+  const [editingAnime, setEditingAnime] = useState<FirebaseAnime | null>(null);
   const [loading, setLoading] = useState(true);
   const [showUploadForm, setShowUploadForm] = useState(false);
   const { toast } = useToast();
@@ -124,6 +127,29 @@ export const AnimeManager: React.FC<AnimeManagerProps> = ({ onBack }) => {
     }
   };
 
+  const handleEditAnime = (anime: FirebaseAnime) => {
+    setEditingAnime(anime);
+  };
+
+  const handleSaveEdit = () => {
+    setEditingAnime(null);
+    fetchAnimes();
+  };
+
+  const handleCancelEdit = () => {
+    setEditingAnime(null);
+  };
+
+  if (editingAnime) {
+    return (
+      <AnimeEditForm
+        anime={editingAnime}
+        onSave={handleSaveEdit}
+        onCancel={handleCancelEdit}
+      />
+    );
+  }
+
   if (showUploadForm) {
     return (
       <div>
@@ -139,7 +165,10 @@ export const AnimeManager: React.FC<AnimeManagerProps> = ({ onBack }) => {
           </Button>
           <h2 className="text-2xl font-bold text-white">Upload New Anime</h2>
         </div>
-        <AnimeUploadForm />
+        <AnimeUploadForm onAnimeAdded={() => {
+          setShowUploadForm(false);
+          fetchAnimes();
+        }} />
       </div>
     );
   }
@@ -219,10 +248,9 @@ export const AnimeManager: React.FC<AnimeManagerProps> = ({ onBack }) => {
           {animes.map((anime) => (
             <div
               key={anime.id}
-              className={`bg-gray-800 rounded-lg overflow-hidden cursor-pointer transition-all ${
+              className={`bg-gray-800 rounded-lg overflow-hidden transition-all ${
                 selectedAnimes.includes(anime.id) ? 'ring-2 ring-red-500' : ''
               }`}
-              onClick={() => handleSelectAnime(anime.id)}
             >
               <div className="relative">
                 <img
@@ -249,6 +277,27 @@ export const AnimeManager: React.FC<AnimeManagerProps> = ({ onBack }) => {
                 <p className="text-gray-400 text-sm">{anime.genre} • {anime.releaseYear}</p>
                 <p className="text-gray-400 text-sm">{anime.episodes} episodes • {anime.status}</p>
                 <p className="text-gray-500 text-xs mt-1">ID: {anime.id}</p>
+                
+                <div className="flex gap-1 mt-3">
+                  <Button
+                    onClick={() => handleEditAnime(anime)}
+                    variant="outline"
+                    size="sm"
+                    className="border-blue-600 text-blue-400 hover:bg-blue-600 hover:text-white flex-1"
+                  >
+                    <Edit size={14} className="mr-1" />
+                    Edit
+                  </Button>
+                  <Button
+                    onClick={() => onManageEpisodes(anime.id, anime.title)}
+                    variant="outline"
+                    size="sm"
+                    className="border-green-600 text-green-400 hover:bg-green-600 hover:text-white flex-1"
+                  >
+                    <Settings size={14} className="mr-1" />
+                    Episodes
+                  </Button>
+                </div>
               </div>
             </div>
           ))}
