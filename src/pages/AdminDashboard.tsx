@@ -135,6 +135,7 @@ const AdminDashboard = () => {
               />
               <EpisodeManager 
                 animeId={managingEpisodes.animeId}
+                onBack={() => setManagingEpisodes(null)}
               />
             </div>
           </div>

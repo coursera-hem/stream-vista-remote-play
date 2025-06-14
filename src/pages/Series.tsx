@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { Sidebar } from '../components/Sidebar';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { useNavigate } from 'react-router-dom';
 import { Episode } from '../types/Episode';
@@ -41,26 +41,53 @@ const Series = () => {
     const fetchSeries = async () => {
       try {
         console.log('Fetching series from Firestore...');
+        console.log('Database instance:', db);
+        
+        // Try to fetch all documents first to see what's there
+        const allDocsQuery = query(collection(db, 'movies'));
+        const allDocsSnapshot = await getDocs(allDocsQuery);
+        console.log('Total documents in movies collection:', allDocsSnapshot.docs.length);
+        
+        allDocsSnapshot.docs.forEach((doc, index) => {
+          const data = doc.data();
+          console.log(`Document ${index + 1}:`, {
+            id: doc.id,
+            type: data.type,
+            title: data.title,
+            allData: data
+          });
+        });
+        
+        // Now try the series-specific query
         const seriesQuery = query(
           collection(db, 'movies'),
-          where('type', '==', 'series')
+          where('type', '==', 'series'),
+          orderBy('createdAt', 'desc')
         );
         const querySnapshot = await getDocs(seriesQuery);
         console.log('Series query results:', querySnapshot.docs.length);
         
         const seriesData = querySnapshot.docs.map(doc => {
           const data = doc.data();
-          console.log('Series document:', doc.id, data);
+          console.log('Series data:', {
+            id: doc.id,
+            ...data
+          });
           return {
             id: doc.id,
             ...data
           };
         }) as Series[];
         
-        console.log('Processed series data:', seriesData);
+        console.log('Total series fetched:', seriesData.length);
         setSeries(seriesData);
       } catch (error) {
         console.error('Error fetching series:', error);
+        console.error('Error details:', {
+          message: error.message,
+          code: error.code,
+          stack: error.stack
+        });
       } finally {
         setLoading(false);
       }
@@ -124,6 +151,7 @@ const Series = () => {
           {series.length === 0 ? (
             <div className="text-center py-12">
               <p className="text-gray-400 text-xl">No series available yet.</p>
+              <p className="text-gray-500 text-sm mt-2">Check console for debugging information.</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">

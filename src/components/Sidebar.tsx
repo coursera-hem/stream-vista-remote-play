@@ -102,8 +102,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ onLogout, isLoggedIn, onLogin 
                       ${isFocused ? 'ring-2 ring-red-500 bg-gray-800' : ''}
                     `}
                   >
-                    <Icon size={20} />
-                    <span className="font-medium">{item.label}</span>
+                    <div className="flex flex-col items-center gap-1">
+                      <Icon size={20} />
+                      <span className="text-xs font-medium">{item.label}</span>
+                    </div>
                   </button>
                 </li>
               );
