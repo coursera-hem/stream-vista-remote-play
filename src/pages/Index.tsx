@@ -33,6 +33,16 @@ interface Movie {
   views?: number;
 }
 
+interface RecentlyWatchedMovie {
+  id: string;
+  title: string;
+  poster: string;
+  year: number;
+  genre: string;
+  rating: number;
+  duration: string;
+}
+
 const Index = () => {
   const [showSearch, setShowSearch] = useState(false);
   const [showLogin, setShowLogin] = useState(false);
@@ -40,7 +50,7 @@ const Index = () => {
   const [showMovieDetail, setShowMovieDetail] = useState(false);
   const [showVideoPlayer, setShowVideoPlayer] = useState(false);
   const [watchlist, setWatchlist] = useState<string[]>([]);
-  const [recentlyWatched, setRecentlyWatched] = useState<Movie[]>([]);
+  const [recentlyWatched, setRecentlyWatched] = useState<RecentlyWatchedMovie[]>([]);
   const [movies, setMovies] = useState<Movie[]>([]);
   const [loading, setLoading] = useState(true);
   const [featuredMovie, setFeaturedMovie] = useState<Movie | null>(null);
@@ -76,7 +86,7 @@ const Index = () => {
           rating: data.rating || 0,
           duration: data.duration || 'Unknown',
           description: data.description || 'No description available',
-          videoUrl: data.videoUrl || '',
+          videoUrl: data.videoUrl || data.driveLink || '',
           releaseYear: data.releaseYear,
           language: data.language,
           isTrending: data.isTrending || false,
@@ -110,17 +120,42 @@ const Index = () => {
     }
   };
 
-  const handleMovieSelect = (movie: Movie) => {
-    setSelectedMovie(movie);
+  const handleMovieSelect = (movie: Movie | RecentlyWatchedMovie) => {
+    // Convert RecentlyWatchedMovie to Movie if needed
+    const fullMovie = movies.find(m => m.id === movie.id) || {
+      ...movie,
+      backdrop: movie.poster,
+      description: 'No description available',
+      videoUrl: '',
+      releaseYear: movie.year,
+      language: 'Unknown',
+      isTrending: false,
+      isFeatured: false,
+      views: 0
+    } as Movie;
+    
+    setSelectedMovie(fullMovie);
     setShowMovieDetail(true);
   };
 
-  const handlePlayMovie = (movie: Movie) => {
-    // Add to recently watched
+  const handlePlayMovie = (movie: Movie | RecentlyWatchedMovie) => {
+    // Convert RecentlyWatchedMovie to Movie if needed and add to recently watched
+    const fullMovie = movies.find(m => m.id === movie.id) || {
+      ...movie,
+      backdrop: movie.poster,
+      description: 'No description available',
+      videoUrl: '',
+      releaseYear: movie.year,
+      language: 'Unknown',
+      isTrending: false,
+      isFeatured: false,
+      views: 0
+    } as Movie;
+
     addToRecentlyWatched(movie);
     setRecentlyWatched(getRecentlyWatched());
     
-    setSelectedMovie(movie);
+    setSelectedMovie(fullMovie);
     setShowMovieDetail(false);
     setShowVideoPlayer(true);
   };
