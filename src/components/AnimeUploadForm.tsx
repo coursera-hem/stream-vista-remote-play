@@ -7,56 +7,52 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Textarea } from './ui/textarea';
-import { Upload, Link as LinkIcon, Image as ImageIcon, ArrowRight, Check } from 'lucide-react';
+import { Upload, Link as LinkIcon, Image as ImageIcon, Plus, ArrowRight } from 'lucide-react';
 import { useToast } from '../hooks/use-toast';
-import { EpisodeForm, EpisodeFormData } from './EpisodeForm';
+import { EpisodeManager } from './EpisodeManager';
 
 interface AnimeData {
   title: string;
   description: string;
   genre: string;
   releaseYear: number;
-  status: string;
   poster: string;
+  status: string;
   rating: number;
   language: string;
   isTrending: boolean;
   isFeatured: boolean;
   views: number;
   uploadedAt: Date;
-  type: 'anime';
 }
 
-type UploadStep = 'details' | 'episodes' | 'complete';
-
 export const AnimeUploadForm = () => {
-  const [currentStep, setCurrentStep] = useState<UploadStep>('details');
-  const [animeId, setAnimeId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
     genre: 'Action',
     releaseYear: new Date().getFullYear(),
-    status: 'Completed',
     poster: '',
+    status: 'Ongoing',
     rating: 8.0,
     language: 'Japanese',
     isTrending: false,
     isFeatured: false
   });
   
-  const [episodesList, setEpisodesList] = useState<EpisodeFormData[]>([]);
   const [posterFile, setPosterFile] = useState<File | null>(null);
   const [posterUploadMethod, setPosterUploadMethod] = useState<'url' | 'upload'>('url');
   const [posterDragActive, setPosterDragActive] = useState(false);
   const [loading, setLoading] = useState(false);
   const [posterUploading, setPosterUploading] = useState(false);
   const [posterUploadProgress, setPosterUploadProgress] = useState(0);
+  const [currentStep, setCurrentStep] = useState<'details' | 'episodes'>('details');
+  const [createdAnimeId, setCreatedAnimeId] = useState<string | null>(null);
   const { toast } = useToast();
 
-  const animeGenres = ['Action', 'Adventure', 'Comedy', 'Drama', 'Fantasy', 'Horror', 'Mecha', 'Mystery', 'Romance', 'Sci-Fi', 'Slice of Life', 'Sports', 'Supernatural', 'Thriller'];
-  const animeStatus = ['Completed', 'Ongoing', 'Upcoming'];
+  const genres = ['Action', 'Comedy', 'Drama', 'Horror', 'Sci-Fi', 'Romance', 'Thriller', 'Adventure', 'Animation', 'Fantasy'];
   const languages = ['Japanese', 'English', 'Korean', 'Chinese', 'Other'];
+  const statuses = ['Ongoing', 'Completed', 'Coming Soon'];
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
@@ -74,23 +70,10 @@ export const AnimeUploadForm = () => {
   };
 
   const handlePosterUpload = async (file: File) => {
-    console.log('=== POSTER UPLOAD STARTED ===');
-    console.log('File details:', {
-      name: file.name,
-      size: file.size,
-      type: file.type,
-      lastModified: file.lastModified
-    });
+    if (!file) return;
 
-    if (!file) {
-      console.error('No file provided');
-      return;
-    }
-
-    // Validate file type
     const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
     if (!allowedTypes.includes(file.type)) {
-      console.error('Invalid file type:', file.type);
       toast({
         title: "Error",
         description: "Please select a valid image file (JPEG, PNG, WebP)",
@@ -99,10 +82,8 @@ export const AnimeUploadForm = () => {
       return;
     }
 
-    // Validate file size (5MB max)
-    const maxSize = 5 * 1024 * 1024;
+    const maxSize = 5 * 1024 * 1024; // 5MB
     if (file.size > maxSize) {
-      console.error('File too large:', file.size);
       toast({
         title: "Error",
         description: "Image size should be less than 5MB",
@@ -115,132 +96,66 @@ export const AnimeUploadForm = () => {
     setPosterUploadProgress(0);
 
     try {
-      console.log('Creating storage reference...');
-      
-      // Create unique filename
       const timestamp = Date.now();
-      const randomId = Math.random().toString(36).substring(2);
-      const fileExtension = file.name.split('.').pop() || 'jpg';
-      const fileName = `anime-posters/${timestamp}_${randomId}.${fileExtension}`;
-      
-      console.log('Storage path:', fileName);
-      console.log('Storage instance:', storage);
-      
+      const fileName = `anime-posters/${timestamp}_${file.name}`;
       const storageRef = ref(storage, fileName);
-      console.log('Storage reference created successfully');
-      
-      // Start upload
-      console.log('Starting upload task...');
       const uploadTask = uploadBytesResumable(storageRef, file);
 
-      return new Promise<void>((resolve, reject) => {
-        uploadTask.on(
-          'state_changed',
-          (snapshot) => {
-            const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-            console.log(`Upload progress: ${progress.toFixed(2)}%`);
-            console.log(`Bytes: ${snapshot.bytesTransferred}/${snapshot.totalBytes}`);
-            console.log('Upload state:', snapshot.state);
-            setPosterUploadProgress(Math.round(progress));
-          },
-          (error) => {
-            console.error('=== UPLOAD ERROR ===');
-            console.error('Error object:', error);
-            console.error('Error code:', error.code);
-            console.error('Error message:', error.message);
-            console.error('Full error:', JSON.stringify(error, null, 2));
-            
-            setPosterUploading(false);
-            setPosterUploadProgress(0);
-            
-            let errorMessage = 'Failed to upload poster image';
-            switch (error.code) {
-              case 'storage/unauthorized':
-                errorMessage = 'Storage access denied. Please check Firebase permissions.';
-                break;
-              case 'storage/canceled':
-                errorMessage = 'Upload was canceled.';
-                break;
-              case 'storage/unknown':
-                errorMessage = 'Unknown storage error. Please try again.';
-                break;
-              case 'storage/retry-limit-exceeded':
-                errorMessage = 'Upload failed after multiple retries. Please try again.';
-                break;
-              default:
-                errorMessage = `Upload failed: ${error.message}`;
-            }
+      uploadTask.on('state_changed',
+        (snapshot) => {
+          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+          setPosterUploadProgress(Math.round(progress));
+        },
+        (error) => {
+          console.error('Poster upload error:', error);
+          toast({
+            title: "Upload Error",
+            description: "Failed to upload poster image",
+            variant: "destructive"
+          });
+          setPosterUploading(false);
+        },
+        async () => {
+          try {
+            const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+            setFormData(prev => ({
+              ...prev,
+              poster: downloadURL
+            }));
             
             toast({
-              title: "Upload Error",
-              description: errorMessage,
+              title: "Success",
+              description: "Poster image uploaded successfully"
+            });
+            setPosterUploading(false);
+            setPosterUploadProgress(0);
+          } catch (error) {
+            console.error('Error getting poster download URL:', error);
+            toast({
+              title: "Error",
+              description: "Failed to get poster image URL",
               variant: "destructive"
             });
-            
-            reject(error);
-          },
-          async () => {
-            try {
-              console.log('=== UPLOAD COMPLETED ===');
-              console.log('Getting download URL...');
-              
-              const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-              console.log('Download URL obtained:', downloadURL);
-              
-              setFormData(prev => ({
-                ...prev,
-                poster: downloadURL
-              }));
-              
-              setPosterUploading(false);
-              setPosterUploadProgress(0);
-              
-              console.log('Poster upload completed successfully');
-              
-              toast({
-                title: "Success",
-                description: "Poster image uploaded successfully!"
-              });
-              
-              resolve();
-            } catch (urlError) {
-              console.error('Error getting download URL:', urlError);
-              setPosterUploading(false);
-              setPosterUploadProgress(0);
-              
-              toast({
-                title: "Error",
-                description: "Upload completed but failed to get image URL",
-                variant: "destructive"
-              });
-              
-              reject(urlError);
-            }
+            setPosterUploading(false);
           }
-        );
-      });
-
+        }
+      );
     } catch (error) {
-      console.error('=== UPLOAD INITIALIZATION ERROR ===');
-      console.error('Error:', error);
-      
-      setPosterUploading(false);
-      setPosterUploadProgress(0);
-      
+      console.error('Poster upload error:', error);
       toast({
         title: "Error",
-        description: "Failed to start poster upload. Please try again.",
+        description: "Failed to start poster upload",
         variant: "destructive"
       });
+      setPosterUploading(false);
     }
   };
 
-  const handlePosterChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePosterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      console.log('Poster file selected from input:', file);
       setPosterFile(file);
-      await handlePosterUpload(file);
+      handlePosterUpload(file);
     }
   };
 
@@ -254,7 +169,7 @@ export const AnimeUploadForm = () => {
     }
   }, []);
 
-  const handlePosterDrop = useCallback(async (e: React.DragEvent) => {
+  const handlePosterDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
     setPosterDragActive(false);
@@ -262,20 +177,16 @@ export const AnimeUploadForm = () => {
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       const file = e.dataTransfer.files[0];
       if (file.type.startsWith('image/')) {
-        console.log('Poster file dropped:', file);
         setPosterFile(file);
         setPosterUploadMethod('upload');
-        await handlePosterUpload(file);
+        handlePosterUpload(file);
       }
     }
   }, []);
 
-  const handleAnimeDetailsSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    console.log('Anime details submission started');
-    console.log('Current form data:', formData);
-
     if (!formData.poster) {
       toast({
         title: "Error",
@@ -293,24 +204,22 @@ export const AnimeUploadForm = () => {
         description: formData.description,
         genre: formData.genre,
         releaseYear: formData.releaseYear,
-        status: formData.status,
         poster: formData.poster,
+        status: formData.status,
         rating: formData.rating,
         language: formData.language,
         isTrending: formData.isTrending,
         isFeatured: formData.isFeatured,
         views: 0,
-        type: 'anime',
         uploadedAt: serverTimestamp()
       };
 
-      console.log('Saving anime data to database:', animeData);
-      const animeDoc = await addDoc(collection(db, 'animes'), animeData);
-      setAnimeId(animeDoc.id);
+      const docRef = await addDoc(collection(db, 'anime'), animeData);
+      setCreatedAnimeId(docRef.id);
 
       toast({
         title: "Success",
-        description: "Anime details saved successfully! You can now add episodes."
+        description: "Anime details saved successfully! Now you can add episodes."
       });
 
       setCurrentStep('episodes');
@@ -319,7 +228,7 @@ export const AnimeUploadForm = () => {
       console.error('Error uploading anime:', error);
       toast({
         title: "Error",
-        description: error.message || 'Failed to save anime details',
+        description: error.message || 'Failed to upload anime',
         variant: "destructive"
       });
     } finally {
@@ -327,24 +236,14 @@ export const AnimeUploadForm = () => {
     }
   };
 
-  const handleCompleteUpload = () => {
-    setCurrentStep('complete');
-    toast({
-      title: "Upload Complete",
-      description: "Anime has been successfully uploaded to the platform!"
-    });
-  };
-
-  const handleStartOver = () => {
-    setCurrentStep('details');
-    setAnimeId(null);
+  const resetForm = () => {
     setFormData({
       title: '',
       description: '',
       genre: 'Action',
       releaseYear: new Date().getFullYear(),
-      status: 'Completed',
       poster: '',
+      status: 'Ongoing',
       rating: 8.0,
       language: 'Japanese',
       isTrending: false,
@@ -352,172 +251,50 @@ export const AnimeUploadForm = () => {
     });
     setPosterFile(null);
     setPosterUploadMethod('url');
+    setCurrentStep('details');
+    setCreatedAnimeId(null);
   };
 
-  // Step indicator component
-  const StepIndicator = () => (
-    <div className="flex items-center justify-center mb-8">
-      <div className="flex items-center space-x-4">
-        <div className={`flex items-center justify-center w-8 h-8 rounded-full ${
-          currentStep === 'details' ? 'bg-red-600 text-white' : 
-          currentStep === 'episodes' || currentStep === 'complete' ? 'bg-green-600 text-white' : 
-          'bg-gray-600 text-gray-300'
-        }`}>
-          {currentStep === 'episodes' || currentStep === 'complete' ? <Check size={16} /> : '1'}
-        </div>
-        <span className={`text-sm ${currentStep === 'details' ? 'text-red-400' : 'text-gray-400'}`}>
-          Anime Details
-        </span>
-        
-        <div className={`w-12 h-0.5 ${currentStep === 'episodes' || currentStep === 'complete' ? 'bg-green-600' : 'bg-gray-600'}`} />
-        
-        <div className={`flex items-center justify-center w-8 h-8 rounded-full ${
-          currentStep === 'episodes' ? 'bg-red-600 text-white' : 
-          currentStep === 'complete' ? 'bg-green-600 text-white' : 
-          'bg-gray-600 text-gray-300'
-        }`}>
-          {currentStep === 'complete' ? <Check size={16} /> : '2'}
-        </div>
-        <span className={`text-sm ${currentStep === 'episodes' ? 'text-red-400' : 'text-gray-400'}`}>
-          Add Episodes
-        </span>
-        
-        <div className={`w-12 h-0.5 ${currentStep === 'complete' ? 'bg-green-600' : 'bg-gray-600'}`} />
-        
-        <div className={`flex items-center justify-center w-8 h-8 rounded-full ${
-          currentStep === 'complete' ? 'bg-green-600 text-white' : 'bg-gray-600 text-gray-300'
-        }`}>
-          {currentStep === 'complete' ? <Check size={16} /> : '3'}
-        </div>
-        <span className={`text-sm ${currentStep === 'complete' ? 'text-green-400' : 'text-gray-400'}`}>
-          Complete
-        </span>
-      </div>
-    </div>
-  );
-
-  if (currentStep === 'episodes') {
+  // Show episode management step
+  if (currentStep === 'episodes' && createdAnimeId) {
     return (
-      <div className="max-w-2xl mx-auto">
+      <div className="max-w-4xl mx-auto">
         <div className="bg-gray-900 rounded-lg p-6">
-          <StepIndicator />
-          
-          <div className="text-center mb-6">
-            <h2 className="text-2xl font-bold text-white mb-2">Add Episodes</h2>
-            <p className="text-gray-400">
-              Now you can add episodes for "{formData.title}". Episodes are optional - you can add them later.
-            </p>
-          </div>
-
-          <div className="bg-gray-800 rounded-lg p-4 mb-6 border border-gray-600">
-            <h3 className="text-white font-medium mb-2">Anime Details Saved:</h3>
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div>
-                <span className="text-gray-400">Title:</span>
-                <span className="text-white ml-2">{formData.title}</span>
-              </div>
-              <div>
-                <span className="text-gray-400">Genre:</span>
-                <span className="text-white ml-2">{formData.genre}</span>
-              </div>
-              <div>
-                <span className="text-gray-400">Status:</span>
-                <span className="text-white ml-2">{formData.status}</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="text-center space-y-4">
-            <p className="text-gray-300 mb-6">
-              You can now manage episodes for this anime from the Admin Dashboard's Episode Management section.
-            </p>
-            
-            <div className="flex gap-4 justify-center">
-              <Button
-                onClick={handleCompleteUpload}
-                className="bg-green-600 hover:bg-green-700 flex items-center gap-2"
-              >
-                <Check size={16} />
-                Complete Upload
-              </Button>
-              
-              <Button
-                onClick={handleStartOver}
-                variant="outline"
-                className="border-gray-600 text-gray-400 hover:text-white hover:border-white"
-              >
-                Upload Another Anime
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (currentStep === 'complete') {
-    return (
-      <div className="max-w-2xl mx-auto">
-        <div className="bg-gray-900 rounded-lg p-6">
-          <StepIndicator />
-          
-          <div className="text-center space-y-6">
-            <div className="w-16 h-16 bg-green-600 rounded-full flex items-center justify-center mx-auto">
-              <Check size={32} className="text-white" />
-            </div>
-            
+          <div className="flex items-center justify-between mb-6">
             <div>
-              <h2 className="text-2xl font-bold text-white mb-2">Upload Complete!</h2>
-              <p className="text-gray-400">
-                "{formData.title}" has been successfully uploaded to the platform.
-              </p>
+              <h2 className="text-2xl font-bold text-white">Add Episodes</h2>
+              <p className="text-gray-400">Add episodes to {formData.title}</p>
             </div>
-            
-            <div className="bg-gray-800 rounded-lg p-4 border border-gray-600">
-              <p className="text-gray-300 text-sm">
-                To add episodes to this anime, go to the Admin Dashboard → Episode Management tab and select this anime.
-              </p>
-            </div>
-            
             <Button
-              onClick={handleStartOver}
-              className="bg-red-600 hover:bg-red-700 flex items-center gap-2"
+              onClick={resetForm}
+              variant="outline"
+              className="border-gray-600 text-white hover:bg-gray-800"
             >
-              <Plus size={16} />
-              Upload Another Anime
+              Add Another Anime
             </Button>
           </div>
+          
+          <EpisodeManager
+            animeId={createdAnimeId}
+            animeTitle={formData.title}
+            onBack={resetForm}
+          />
         </div>
       </div>
     );
   }
 
+  // Show anime details form
   return (
     <div className="max-w-2xl mx-auto">
       <div className="bg-gray-900 rounded-lg p-6">
-        <StepIndicator />
-        
-        {/* Enhanced Debug Information */}
-        <div className="mb-6 p-4 bg-gray-800 border border-gray-600 text-gray-300 rounded text-xs">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <p><strong>Firebase Storage:</strong> {storage ? '✅ Connected' : '❌ Not connected'}</p>
-              <p><strong>Poster Uploading:</strong> {posterUploading ? '🔄 Yes' : '✅ No'}</p>
-              <p><strong>Poster Progress:</strong> {posterUploadProgress}%</p>
-            </div>
-            <div>
-              <p><strong>Form Loading:</strong> {loading ? '🔄 Yes' : '✅ No'}</p>
-            </div>
-          </div>
-          <div className="mt-2">
-            <p><strong>Poster URL:</strong> {formData.poster ? '✅ Set' : '❌ Empty'}</p>
-            {formData.poster && <p className="break-all text-green-400">{formData.poster}</p>}
-          </div>
+        <div className="mb-6">
+          <h2 className="text-2xl font-bold text-white mb-2">Add New Anime</h2>
+          <p className="text-gray-400">Step 1: Enter anime details, then you can add episodes</p>
         </div>
 
-        {/* Progress Indicators */}
-        {posterUploading && (
-          <div className="mb-6 space-y-4">
+        {posterUploading && posterUploadProgress > 0 && (
+          <div className="mb-6">
             <div className="p-4 bg-green-500/20 border border-green-500 text-green-400 rounded">
               <div className="flex items-center justify-between mb-2">
                 <span>Uploading Poster...</span>
@@ -533,14 +310,8 @@ export const AnimeUploadForm = () => {
           </div>
         )}
 
-        <div className="text-center mb-6">
-          <h2 className="text-2xl font-bold text-white mb-2">Anime Details</h2>
-          <p className="text-gray-400">
-            Fill in all the anime information first, then you can add episodes in the next step.
-          </p>
-        </div>
-
-        <form onSubmit={handleAnimeDetailsSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Title */}
           <div>
             <Label htmlFor="title" className="text-white">Anime Title *</Label>
             <Input
@@ -554,6 +325,7 @@ export const AnimeUploadForm = () => {
             />
           </div>
 
+          {/* Description */}
           <div>
             <Label htmlFor="description" className="text-white">Description *</Label>
             <Textarea
@@ -614,7 +386,7 @@ export const AnimeUploadForm = () => {
                 onChange={handleInputChange}
                 required
                 className="bg-gray-800 border-gray-600 text-white"
-                placeholder="https://example.com/anime-poster.jpg"
+                placeholder="https://example.com/poster.jpg"
               />
             </div>
           ) : (
@@ -635,23 +407,33 @@ export const AnimeUploadForm = () => {
                 {posterUploading ? (
                   <div className="space-y-4">
                     <ImageIcon className="w-12 h-12 text-red-500 mx-auto animate-pulse" />
-                    <p className="text-gray-300">Uploading poster... {posterUploadProgress}%</p>
-                    <div className="w-full bg-gray-700 rounded-full h-2 max-w-xs mx-auto">
+                    <p className="text-gray-300">Uploading poster...</p>
+                    <div className="w-full bg-gray-700 rounded-full h-2">
                       <div 
-                        className="bg-red-500 h-2 rounded-full transition-all duration-300"
+                        className="bg-red-600 h-2 rounded-full transition-all duration-300"
                         style={{ width: `${posterUploadProgress}%` }}
                       />
                     </div>
+                    <p className="text-sm text-gray-400">{posterUploadProgress}% complete</p>
                   </div>
-                ) : formData.poster ? (
+                ) : formData.poster && posterFile ? (
                   <div className="space-y-2">
                     <img 
                       src={formData.poster} 
                       alt="Poster preview" 
                       className="w-32 h-48 object-cover mx-auto rounded-lg"
                     />
-                    <p className="text-green-400">✅ Poster uploaded successfully!</p>
-                    <p className="text-xs text-gray-400 break-all">{formData.poster}</p>
+                    <p className="text-green-400">Poster uploaded successfully!</p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setFormData(prev => ({ ...prev, poster: '' }));
+                        setPosterFile(null);
+                      }}
+                      className="text-red-400 hover:text-red-300 text-sm"
+                    >
+                      Upload different image
+                    </button>
                   </div>
                 ) : (
                   <div className="space-y-4">
@@ -661,18 +443,21 @@ export const AnimeUploadForm = () => {
                       <Input
                         id="poster-file"
                         type="file"
-                        accept="image/jpeg,image/jpg,image/png,image/webp"
+                        accept="image/*"
                         onChange={handlePosterChange}
                         className="bg-gray-800 border-gray-600 text-white file:bg-gray-700 file:text-white file:border-0 file:rounded file:px-4 file:py-2 file:mr-4"
                       />
                     </div>
+                    <p className="text-sm text-gray-400">
+                      Supported formats: JPEG, PNG, WebP (Max: 5MB)
+                    </p>
                   </div>
                 )}
               </div>
             </div>
           )}
 
-          {/* Genre, Year, Status */}
+          {/* Genre, Year, Rating, Language, Status */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="genre" className="text-white">Genre *</Label>
@@ -684,7 +469,7 @@ export const AnimeUploadForm = () => {
                 required
                 className="w-full px-4 py-3 bg-gray-800 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-red-500"
               >
-                {animeGenres.map(genre => (
+                {genres.map(genre => (
                   <option key={genre} value={genre}>{genre}</option>
                 ))}
               </select>
@@ -703,22 +488,6 @@ export const AnimeUploadForm = () => {
                 required
                 className="bg-gray-800 border-gray-600 text-white"
               />
-            </div>
-
-            <div>
-              <Label htmlFor="status" className="text-white">Status *</Label>
-              <select
-                id="status"
-                name="status"
-                value={formData.status}
-                onChange={handleInputChange}
-                required
-                className="w-full px-4 py-3 bg-gray-800 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-red-500"
-              >
-                {animeStatus.map(status => (
-                  <option key={status} value={status}>{status}</option>
-                ))}
-              </select>
             </div>
 
             <div>
@@ -747,6 +516,21 @@ export const AnimeUploadForm = () => {
               >
                 {languages.map(lang => (
                   <option key={lang} value={lang}>{lang}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="md:col-span-2">
+              <Label htmlFor="status" className="text-white">Status</Label>
+              <select
+                id="status"
+                name="status"
+                value={formData.status}
+                onChange={handleInputChange}
+                className="w-full px-4 py-3 bg-gray-800 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-red-500"
+              >
+                {statuses.map(status => (
+                  <option key={status} value={status}>{status}</option>
                 ))}
               </select>
             </div>
@@ -787,13 +571,13 @@ export const AnimeUploadForm = () => {
             className="w-full bg-red-600 hover:bg-red-700 flex items-center justify-center gap-2"
           >
             {loading ? (
-              'Saving Anime Details...'
+              'Saving Anime...'
             ) : posterUploading ? (
               'Uploading Poster...'
             ) : (
               <>
                 <ArrowRight size={20} />
-                Save Details & Continue to Episodes
+                Save & Add Episodes
               </>
             )}
           </Button>
