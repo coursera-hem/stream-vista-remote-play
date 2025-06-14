@@ -72,7 +72,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onLogout, isLoggedIn, onLogin 
 
       {/* Sidebar */}
       <div className={`
-        fixed left-0 top-0 h-full w-80 bg-black/95 backdrop-blur-sm border-r border-gray-800 z-40
+        fixed left-0 top-0 h-full w-64 bg-black/95 backdrop-blur-sm border-r border-gray-800 z-40
         transform transition-transform duration-300 ease-in-out
         ${isOpen ? 'translate-x-0' : '-translate-x-full'}
       `}>
@@ -83,7 +83,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onLogout, isLoggedIn, onLogin 
 
         {/* Navigation Menu */}
         <nav className="p-4">
-          <ul className="space-y-3">
+          <ul className="space-y-2">
             {menuItems.map((item, index) => {
               const Icon = item.icon;
               const isActive = location.pathname === item.path;
@@ -97,13 +97,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ onLogout, isLoggedIn, onLogin 
                       setIsOpen(false);
                     }}
                     className={`
-                      w-full flex flex-col items-center gap-2 px-4 py-4 rounded-lg transition-colors text-center min-h-[80px]
+                      w-full flex flex-col items-center gap-1 px-4 py-3 rounded-lg transition-colors text-center
                       ${isActive ? 'bg-red-600 text-white' : 'text-gray-300 hover:bg-gray-800 hover:text-white'}
                       ${isFocused ? 'ring-2 ring-red-500 bg-gray-800' : ''}
                     `}
                   >
-                    <Icon size={24} />
-                    <span className="text-sm font-medium leading-tight">{item.label}</span>
+                    <Icon size={20} />
+                    <span className="text-xs font-medium">{item.label}</span>
                   </button>
                 </li>
               );
