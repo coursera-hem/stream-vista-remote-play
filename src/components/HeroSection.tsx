@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Play, Info, Plus, Check } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -50,13 +51,10 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   };
 
   return (
-    <div className="relative h-screen flex items-center">
-      {/* Background image */}
-      <div
-        className="absolute inset-0 bg-cover bg-center"
-        style={{ backgroundImage: `url(${featuredMovie.backdrop || featuredMovie.poster})` }}
-      />
-      
+    <div 
+      className="relative h-screen flex items-center bg-cover bg-center"
+      style={{ backgroundImage: `url(${featuredMovie.backdrop || featuredMovie.poster})` }}
+    >
       {/* Gradient overlays */}
       <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent" />
       <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-transparent to-transparent" />
