@@ -395,16 +395,18 @@ const Index = () => {
 
         {/* Movie Carousels */}
         <div className="relative -mt-32 z-10 space-y-8 pb-20">
-          {/* Recently Watched - Now comes first */}
+          {/* Recently Watched - Now comes first with extra padding */}
           {recentlyWatched.length > 0 && (
-            <MovieCarousel
-              title="Recently Watched"
-              movies={recentlyWatched}
-              rowIndex={0}
-              onMovieSelect={handleMovieSelect}
-              watchlist={watchlist}
-              onToggleWatchlist={handleToggleWatchlist}
-            />
+            <div className="pt-16">
+              <MovieCarousel
+                title="Recently Watched"
+                movies={recentlyWatched}
+                rowIndex={0}
+                onMovieSelect={handleMovieSelect}
+                watchlist={watchlist}
+                onToggleWatchlist={handleToggleWatchlist}
+              />
+            </div>
           )}
 
           {/* Recently Added Movies */}
