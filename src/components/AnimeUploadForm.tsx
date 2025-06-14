@@ -364,7 +364,7 @@ export const AnimeUploadForm = () => {
         uploadedAt: serverTimestamp()
       };
 
-      await addDoc(collection(db, 'anime'), animeData);
+      await addDoc(collection(db, 'animes'), animeData);
 
       toast({
         title: "Success",

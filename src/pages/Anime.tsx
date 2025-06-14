@@ -1,22 +1,104 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { collection, getDocs } from 'firebase/firestore';
+import { db } from '../config/firebase';
 import { Navigation } from '../components/Navigation';
 import { Sidebar } from '../components/Sidebar';
 import { SearchModal } from '../components/SearchModal';
 import { LoginModal } from '../components/LoginModal';
+import { AnimeCard } from '../components/AnimeCard';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+
+interface FirebaseAnime {
+  id: string;
+  title: string;
+  description: string;
+  genre: string;
+  releaseYear: number;
+  episodes: number;
+  status: string;
+  poster: string;
+  videoUrl: string;
+  rating: number;
+  language: string;
+  isTrending: boolean;
+  isFeatured: boolean;
+  views: number;
+}
 
 const Anime = () => {
   const [showSearchModal, setShowSearchModal] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const [animes, setAnimes] = useState<FirebaseAnime[]>([]);
+  const [loading, setLoading] = useState(true);
   const { currentUser, logout, userData } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    fetchAnimes();
+  }, []);
+
+  const fetchAnimes = async () => {
+    try {
+      console.log('Fetching animes from Firebase...');
+      const animesCollection = collection(db, 'animes');
+      const animeSnapshot = await getDocs(animesCollection);
+      const animeList = animeSnapshot.docs.map(doc => {
+        const data = doc.data();
+        console.log('Anime data:', { id: doc.id, ...data });
+        return {
+          id: doc.id,
+          ...data
+        };
+      }) as FirebaseAnime[];
+      
+      console.log('Total animes fetched:', animeList.length);
+      setAnimes(animeList);
+    } catch (error) {
+      console.error('Error fetching animes:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleLogout = () => {
     logout();
     navigate('/');
   };
+
+  const handleAnimePlay = (anime: FirebaseAnime) => {
+    console.log('Playing anime:', anime.title);
+    // You can implement video player modal here
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-black text-white">
+        <Navigation
+          onSearch={() => setShowSearchModal(true)}
+          onLogin={() => setShowLoginModal(true)}
+          isLoggedIn={!!currentUser}
+          onLogout={handleLogout}
+          currentUser={userData ? { name: userData.name, email: userData.email } : undefined}
+        />
+        
+        <Sidebar
+          onLogout={handleLogout}
+          isLoggedIn={!!currentUser}
+          onLogin={() => setShowLoginModal(true)}
+        />
+
+        <main className="pt-20 px-6">
+          <div className="max-w-7xl mx-auto">
+            <div className="flex items-center justify-center py-20">
+              <div className="text-white text-xl">Loading anime collection...</div>
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-black text-white">
@@ -38,48 +120,34 @@ const Anime = () => {
         <div className="max-w-7xl mx-auto">
           <h1 className="text-4xl font-bold mb-8">Anime Collection</h1>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {/* Placeholder content for anime */}
-            <div className="bg-gray-800 rounded-lg p-6 text-center">
-              <div className="w-full h-48 bg-gray-700 rounded-lg mb-4 flex items-center justify-center">
-                <span className="text-gray-400">Anime Content</span>
+          {animes.length === 0 ? (
+            <div className="text-center py-20">
+              <div className="bg-gray-800 rounded-lg p-8 max-w-md mx-auto">
+                <h2 className="text-2xl font-semibold mb-4">No Anime Available</h2>
+                <p className="text-gray-400 mb-6">
+                  There are no anime uploaded yet. Check back later for new content!
+                </p>
               </div>
-              <h3 className="text-lg font-semibold">Coming Soon</h3>
-              <p className="text-gray-400 text-sm mt-2">
-                Anime content will be available here
-              </p>
             </div>
-            
-            <div className="bg-gray-800 rounded-lg p-6 text-center">
-              <div className="w-full h-48 bg-gray-700 rounded-lg mb-4 flex items-center justify-center">
-                <span className="text-gray-400">Anime Content</span>
-              </div>
-              <h3 className="text-lg font-semibold">Coming Soon</h3>
-              <p className="text-gray-400 text-sm mt-2">
-                Anime content will be available here
-              </p>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {animes.map((anime) => (
+                <AnimeCard
+                  key={anime.id}
+                  id={anime.id}
+                  title={anime.title}
+                  poster={anime.poster}
+                  genre={anime.genre}
+                  releaseYear={anime.releaseYear}
+                  episodes={anime.episodes}
+                  status={anime.status}
+                  rating={anime.rating}
+                  description={anime.description}
+                  onPlay={() => handleAnimePlay(anime)}
+                />
+              ))}
             </div>
-            
-            <div className="bg-gray-800 rounded-lg p-6 text-center">
-              <div className="w-full h-48 bg-gray-700 rounded-lg mb-4 flex items-center justify-center">
-                <span className="text-gray-400">Anime Content</span>
-              </div>
-              <h3 className="text-lg font-semibold">Coming Soon</h3>
-              <p className="text-gray-400 text-sm mt-2">
-                Anime content will be available here
-              </p>
-            </div>
-            
-            <div className="bg-gray-800 rounded-lg p-6 text-center">
-              <div className="w-full h-48 bg-gray-700 rounded-lg mb-4 flex items-center justify-center">
-                <span className="text-gray-400">Anime Content</span>
-              </div>
-              <h3 className="text-lg font-semibold">Coming Soon</h3>
-              <p className="text-gray-400 text-sm mt-2">
-                Anime content will be available here
-              </p>
-            </div>
-          </div>
+          )}
         </div>
       </main>
 
