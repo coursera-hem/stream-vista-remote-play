@@ -4,7 +4,6 @@ import { Play, Info, Plus, Check } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../hooks/use-toast';
-import { useFocus } from './FocusProvider';
 
 interface AppMovie {
   id: string;
@@ -42,7 +41,6 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   const { currentUser } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { focusedElement } = useFocus();
 
   const handlePlayClick = () => {
     if (!currentUser) {
@@ -80,36 +78,27 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
           {featuredMovie.description || 'No description available'}
         </p>
         
-        {/* Action buttons with keyboard navigation support */}
+        {/* Action buttons */}
         <div className="flex gap-4">
           <button
-            id="hero-play-0"
             onClick={handlePlayClick}
-            className={`flex items-center gap-3 bg-white text-black px-8 py-4 rounded-lg font-semibold text-lg hover:bg-gray-200 transition-colors ${
-              focusedElement === 'hero-play-0' ? 'ring-4 ring-white ring-opacity-70' : ''
-            }`}
+            className="flex items-center gap-3 bg-white text-black px-8 py-4 rounded-lg font-semibold text-lg hover:bg-gray-200 transition-colors"
           >
             <Play className="w-6 h-6 fill-current" />
             {currentUser ? 'Play' : 'Sign In to Play'}
           </button>
           
           <button
-            id="hero-info-0"
             onClick={() => onMoreInfo(featuredMovie)}
-            className={`flex items-center gap-3 bg-gray-600/80 text-white px-8 py-4 rounded-lg font-semibold text-lg hover:bg-gray-600 transition-colors ${
-              focusedElement === 'hero-info-0' ? 'ring-4 ring-white ring-opacity-70' : ''
-            }`}
+            className="flex items-center gap-3 bg-gray-600/80 text-white px-8 py-4 rounded-lg font-semibold text-lg hover:bg-gray-600 transition-colors"
           >
             <Info className="w-6 h-6" />
             More Info
           </button>
           
           <button
-            id="hero-watchlist-0"
             onClick={() => onToggleWatchlist?.(featuredMovie.id)}
-            className={`flex items-center justify-center w-14 h-14 bg-gray-600/80 text-white rounded-full hover:bg-gray-600 transition-colors ${
-              focusedElement === 'hero-watchlist-0' ? 'ring-4 ring-white ring-opacity-70' : ''
-            }`}
+            className="flex items-center justify-center w-14 h-14 bg-gray-600/80 text-white rounded-full hover:bg-gray-600 transition-colors"
           >
             {isInWatchlist ? (
               <Check className="w-6 h-6 text-green-400" />
