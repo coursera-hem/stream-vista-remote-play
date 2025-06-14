@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { Navigation } from '../components/Navigation';
 import { Button } from '../components/ui/button';
@@ -10,12 +10,14 @@ import { Camera, Save } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const Profile = () => {
-  const { currentUser, userData, logout, updateUserProfile } = useAuth();
+  const { currentUser, userData, logout, updateUserProfile, updateProfileImage } = useAuth();
   const navigate = useNavigate();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [name, setName] = useState(userData?.name || '');
   const [email, setEmail] = useState(userData?.email || '');
   const [loading, setLoading] = useState(false);
+  const [photoLoading, setPhotoLoading] = useState(false);
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
 
@@ -41,6 +43,32 @@ const Profile = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handlePhotoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setError('');
+    setSuccess('');
+    setPhotoLoading(true);
+
+    try {
+      await updateProfileImage(file);
+      setSuccess('Profile photo updated successfully!');
+    } catch (error: any) {
+      setError(error.message);
+    } finally {
+      setPhotoLoading(false);
+      // Reset the file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  const triggerFileUpload = () => {
+    fileInputRef.current?.click();
   };
 
   if (!currentUser) {
@@ -71,9 +99,20 @@ const Profile = () => {
                   {userData?.name?.charAt(0)?.toUpperCase() || 'U'}
                 </AvatarFallback>
               </Avatar>
-              <button className="absolute bottom-0 right-0 bg-red-600 hover:bg-red-700 p-2 rounded-full">
+              <button 
+                onClick={triggerFileUpload}
+                disabled={photoLoading}
+                className="absolute bottom-0 right-0 bg-red-600 hover:bg-red-700 disabled:opacity-50 p-2 rounded-full transition-colors"
+              >
                 <Camera size={16} />
               </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handlePhotoUpload}
+                className="hidden"
+              />
             </div>
             <div>
               <h3 className="text-xl font-semibold text-white">{userData?.name}</h3>
@@ -82,6 +121,9 @@ const Profile = () => {
                 <span className="inline-block bg-red-600 text-white text-xs px-2 py-1 rounded mt-1">
                   Admin
                 </span>
+              )}
+              {photoLoading && (
+                <p className="text-sm text-blue-400 mt-1">Uploading photo...</p>
               )}
             </div>
           </div>

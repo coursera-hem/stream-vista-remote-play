@@ -29,6 +29,7 @@ interface AuthContextType {
   loginWithGoogle: () => Promise<void>;
   logout: () => Promise<void>;
   updateUserProfile: (data: Partial<UserData>) => Promise<void>;
+  updateProfileImage: (file: File) => Promise<void>;
   loading: boolean;
 }
 
@@ -122,6 +123,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUserData(updatedData);
   };
 
+  const updateProfileImage = async (file: File) => {
+    if (!currentUser) throw new Error('No user logged in');
+    
+    const { uploadProfileImage, validateImageFile } = await import('../utils/fileUpload');
+    
+    validateImageFile(file);
+    const imageUrl = await uploadProfileImage(file, currentUser.uid);
+    
+    await updateUserProfile({ profileImage: imageUrl });
+  };
+
   const logout = async () => {
     await signOut(auth);
     setUserData(null);
@@ -150,6 +162,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     loginWithGoogle,
     logout,
     updateUserProfile,
+    updateProfileImage,
     loading
   };
 
