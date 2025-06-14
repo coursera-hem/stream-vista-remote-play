@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useFocus } from './FocusProvider';
 import { Play, Plus, Check } from 'lucide-react';
 
@@ -38,6 +38,8 @@ export const MovieCard: React.FC<MovieCardProps> = ({
 }) => {
   const { focusedElement } = useFocus();
   const isFocused = focusedElement === focusId;
+  const [imageError, setImageError] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
 
   const handleClick = () => {
     onSelect(movie);
@@ -46,6 +48,17 @@ export const MovieCard: React.FC<MovieCardProps> = ({
   const handleWatchlistToggle = (e: React.MouseEvent) => {
     e.stopPropagation();
     onToggleWatchlist?.(movie.id);
+  };
+
+  const handleImageError = () => {
+    console.log('Image failed to load for movie:', movie.title);
+    console.log('Image URL:', movie.poster);
+    setImageError(true);
+  };
+
+  const handleImageLoad = () => {
+    console.log('Image loaded successfully for movie:', movie.title);
+    setImageLoaded(true);
   };
 
   return (
@@ -58,11 +71,29 @@ export const MovieCard: React.FC<MovieCardProps> = ({
       `}
       onClick={handleClick}
     >
-      <img
-        src={movie.poster}
-        alt={movie.title}
-        className="w-full h-full object-cover"
-      />
+      {imageError ? (
+        <div className="w-full h-full bg-gray-800 flex items-center justify-center">
+          <div className="text-center text-white p-4">
+            <div className="text-sm mb-2">Image not available</div>
+            <div className="text-xs text-gray-400 break-all">{movie.poster}</div>
+          </div>
+        </div>
+      ) : (
+        <img
+          src={movie.poster}
+          alt={movie.title}
+          className="w-full h-full object-cover"
+          onError={handleImageError}
+          onLoad={handleImageLoad}
+        />
+      )}
+      
+      {/* Loading indicator */}
+      {!imageLoaded && !imageError && (
+        <div className="absolute inset-0 bg-gray-800 flex items-center justify-center">
+          <div className="text-white text-sm">Loading...</div>
+        </div>
+      )}
       
       {/* Gradient overlay */}
       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />

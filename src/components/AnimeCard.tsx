@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Play, Star, Calendar, Tv } from 'lucide-react';
 
 interface AnimeCardProps {
@@ -26,17 +26,47 @@ export const AnimeCard: React.FC<AnimeCardProps> = ({
   description,
   onPlay
 }) => {
+  const [imageError, setImageError] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
+
+  const handleImageError = () => {
+    console.log('Image failed to load for anime:', title);
+    console.log('Image URL:', poster);
+    setImageError(true);
+  };
+
+  const handleImageLoad = () => {
+    console.log('Image loaded successfully for anime:', title);
+    setImageLoaded(true);
+  };
+
   return (
     <div className="bg-gray-800 rounded-lg overflow-hidden hover:scale-105 transition-transform duration-300 group">
       <div className="relative">
-        <img
-          src={poster}
-          alt={title}
-          className="w-full h-64 object-cover"
-          onError={(e) => {
-            (e.target as HTMLImageElement).src = '/placeholder.svg';
-          }}
-        />
+        {imageError ? (
+          <div className="w-full h-64 bg-gray-700 flex items-center justify-center">
+            <div className="text-center text-white p-4">
+              <div className="text-sm mb-2">Image not available</div>
+              <div className="text-xs text-gray-400 break-all">{poster}</div>
+            </div>
+          </div>
+        ) : (
+          <img
+            src={poster}
+            alt={title}
+            className="w-full h-64 object-cover"
+            onError={handleImageError}
+            onLoad={handleImageLoad}
+          />
+        )}
+        
+        {/* Loading indicator */}
+        {!imageLoaded && !imageError && (
+          <div className="absolute inset-0 bg-gray-700 flex items-center justify-center">
+            <div className="text-white text-sm">Loading...</div>
+          </div>
+        )}
+        
         <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-opacity duration-300 flex items-center justify-center">
           <button
             onClick={onPlay}
