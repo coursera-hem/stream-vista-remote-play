@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback } from 'react';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
@@ -6,7 +7,7 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Textarea } from './ui/textarea';
-import { Upload, Link as LinkIcon, Video, FileVideo, Plus, Image as ImageIcon, ArrowRight, Check } from 'lucide-react';
+import { Upload, Link as LinkIcon, Image as ImageIcon, ArrowRight, Check } from 'lucide-react';
 import { useToast } from '../hooks/use-toast';
 import { EpisodeForm, EpisodeFormData } from './EpisodeForm';
 
@@ -15,10 +16,8 @@ interface AnimeData {
   description: string;
   genre: string;
   releaseYear: number;
-  episodes: number;
   status: string;
   poster: string;
-  videoUrl: string;
   rating: number;
   language: string;
   isTrending: boolean;
@@ -38,9 +37,7 @@ export const AnimeUploadForm = () => {
     description: '',
     genre: 'Action',
     releaseYear: new Date().getFullYear(),
-    episodes: 1,
     status: 'Completed',
-    driveLink: '',
     poster: '',
     rating: 8.0,
     language: 'Japanese',
@@ -49,16 +46,11 @@ export const AnimeUploadForm = () => {
   });
   
   const [episodesList, setEpisodesList] = useState<EpisodeFormData[]>([]);
-  const [videoFile, setVideoFile] = useState<File | null>(null);
   const [posterFile, setPosterFile] = useState<File | null>(null);
-  const [uploadMethod, setUploadMethod] = useState<'drive' | 'upload'>('drive');
   const [posterUploadMethod, setPosterUploadMethod] = useState<'url' | 'upload'>('url');
-  const [dragActive, setDragActive] = useState(false);
   const [posterDragActive, setPosterDragActive] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [uploading, setUploading] = useState(false);
   const [posterUploading, setPosterUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
   const [posterUploadProgress, setPosterUploadProgress] = useState(0);
   const { toast } = useToast();
 
@@ -243,97 +235,6 @@ export const AnimeUploadForm = () => {
     }
   };
 
-  const handleVideoUpload = async (file: File) => {
-    if (!file) return;
-
-    const allowedTypes = ['video/mp4', 'video/avi', 'video/mov', 'video/wmv', 'video/mkv'];
-    if (!allowedTypes.includes(file.type)) {
-      toast({
-        title: "Error",
-        description: "Please select a valid video file (MP4, AVI, MOV, WMV, MKV)",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    const maxSize = 500 * 1024 * 1024; // 500MB
-    if (file.size > maxSize) {
-      toast({
-        title: "Error",
-        description: "File size should be less than 500MB",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    setUploading(true);
-    setUploadProgress(0);
-
-    try {
-      const timestamp = Date.now();
-      const sanitizedFileName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
-      const fileName = `anime-videos/${timestamp}_${sanitizedFileName}`;
-      const storageRef = ref(storage, fileName);
-      const uploadTask = uploadBytesResumable(storageRef, file);
-
-      uploadTask.on('state_changed',
-        (snapshot) => {
-          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-          setUploadProgress(Math.round(progress));
-        },
-        (error) => {
-          console.error('Upload error:', error);
-          toast({
-            title: "Upload Error",
-            description: "Failed to upload video file",
-            variant: "destructive"
-          });
-          setUploading(false);
-        },
-        async () => {
-          try {
-            const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-            setFormData(prev => ({
-              ...prev,
-              driveLink: downloadURL
-            }));
-            
-            toast({
-              title: "Success",
-              description: "Video uploaded successfully"
-            });
-            setUploading(false);
-            setUploadProgress(0);
-          } catch (error) {
-            console.error('Error getting download URL:', error);
-            toast({
-              title: "Error",
-              description: "Failed to get video URL",
-              variant: "destructive"
-            });
-            setUploading(false);
-          }
-        }
-      );
-    } catch (error) {
-      console.error('Upload error:', error);
-      toast({
-        title: "Error",
-        description: "Failed to start upload",
-        variant: "destructive"
-      });
-      setUploading(false);
-    }
-  };
-
-  const handleVideoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      setVideoFile(file);
-      handleVideoUpload(file);
-    }
-  };
-
   const handlePosterChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
@@ -342,31 +243,6 @@ export const AnimeUploadForm = () => {
       await handlePosterUpload(file);
     }
   };
-
-  const handleDrag = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (e.type === "dragenter" || e.type === "dragover") {
-      setDragActive(true);
-    } else if (e.type === "dragleave") {
-      setDragActive(false);
-    }
-  }, []);
-
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setDragActive(false);
-    
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      const file = e.dataTransfer.files[0];
-      if (file.type.startsWith('video/')) {
-        setVideoFile(file);
-        setUploadMethod('upload');
-        handleVideoUpload(file);
-      }
-    }
-  }, []);
 
   const handlePosterDrag = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -394,34 +270,11 @@ export const AnimeUploadForm = () => {
     }
   }, []);
 
-  const convertGoogleDriveLink = (driveUrl: string): string => {
-    try {
-      const fileIdMatch = driveUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);
-      if (fileIdMatch) {
-        const fileId = fileIdMatch[1];
-        return `https://drive.google.com/uc?export=download&id=${fileId}`;
-      }
-      return driveUrl;
-    } catch (error) {
-      console.error('Error converting Google Drive link:', error);
-      return driveUrl;
-    }
-  };
-
   const handleAnimeDetailsSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     console.log('Anime details submission started');
     console.log('Current form data:', formData);
-    
-    if (!formData.driveLink) {
-      toast({
-        title: "Error",
-        description: "Please provide a video link or upload a video file",
-        variant: "destructive"
-      });
-      return;
-    }
 
     if (!formData.poster) {
       toast({
@@ -435,17 +288,13 @@ export const AnimeUploadForm = () => {
     setLoading(true);
 
     try {
-      const videoUrl = uploadMethod === 'drive' ? convertGoogleDriveLink(formData.driveLink) : formData.driveLink;
-
       const animeData: Omit<AnimeData, 'uploadedAt'> & { uploadedAt: any } = {
         title: formData.title,
         description: formData.description,
         genre: formData.genre,
         releaseYear: formData.releaseYear,
-        episodes: formData.episodes,
         status: formData.status,
         poster: formData.poster,
-        videoUrl: videoUrl,
         rating: formData.rating,
         language: formData.language,
         isTrending: formData.isTrending,
@@ -494,18 +343,14 @@ export const AnimeUploadForm = () => {
       description: '',
       genre: 'Action',
       releaseYear: new Date().getFullYear(),
-      episodes: 1,
       status: 'Completed',
-      driveLink: '',
       poster: '',
       rating: 8.0,
       language: 'Japanese',
       isTrending: false,
       isFeatured: false
     });
-    setVideoFile(null);
     setPosterFile(null);
-    setUploadMethod('drive');
     setPosterUploadMethod('url');
   };
 
@@ -574,10 +419,6 @@ export const AnimeUploadForm = () => {
               <div>
                 <span className="text-gray-400">Genre:</span>
                 <span className="text-white ml-2">{formData.genre}</span>
-              </div>
-              <div>
-                <span className="text-gray-400">Episodes:</span>
-                <span className="text-white ml-2">{formData.episodes}</span>
               </div>
               <div>
                 <span className="text-gray-400">Status:</span>
@@ -665,8 +506,6 @@ export const AnimeUploadForm = () => {
               <p><strong>Poster Progress:</strong> {posterUploadProgress}%</p>
             </div>
             <div>
-              <p><strong>Video Uploading:</strong> {uploading ? '🔄 Yes' : '✅ No'}</p>
-              <p><strong>Video Progress:</strong> {uploadProgress}%</p>
               <p><strong>Form Loading:</strong> {loading ? '🔄 Yes' : '✅ No'}</p>
             </div>
           </div>
@@ -677,36 +516,20 @@ export const AnimeUploadForm = () => {
         </div>
 
         {/* Progress Indicators */}
-        {(uploading && uploadProgress > 0) || (posterUploading && posterUploadProgress >= 0) && (
+        {posterUploading && (
           <div className="mb-6 space-y-4">
-            {uploading && uploadProgress > 0 && (
-              <div className="p-4 bg-blue-500/20 border border-blue-500 text-blue-400 rounded">
-                <div className="flex items-center justify-between mb-2">
-                  <span>Uploading Video...</span>
-                  <span>{uploadProgress}%</span>
-                </div>
-                <div className="w-full bg-gray-700 rounded-full h-2">
-                  <div 
-                    className="bg-blue-500 h-2 rounded-full transition-all duration-300"
-                    style={{ width: `${uploadProgress}%` }}
-                  />
-                </div>
+            <div className="p-4 bg-green-500/20 border border-green-500 text-green-400 rounded">
+              <div className="flex items-center justify-between mb-2">
+                <span>Uploading Poster...</span>
+                <span>{posterUploadProgress}%</span>
               </div>
-            )}
-            {posterUploading && (
-              <div className="p-4 bg-green-500/20 border border-green-500 text-green-400 rounded">
-                <div className="flex items-center justify-between mb-2">
-                  <span>Uploading Poster...</span>
-                  <span>{posterUploadProgress}%</span>
-                </div>
-                <div className="w-full bg-gray-700 rounded-full h-2">
-                  <div 
-                    className="bg-green-500 h-2 rounded-full transition-all duration-300"
-                    style={{ width: `${posterUploadProgress}%` }}
-                  />
-                </div>
+              <div className="w-full bg-gray-700 rounded-full h-2">
+                <div 
+                  className="bg-green-500 h-2 rounded-full transition-all duration-300"
+                  style={{ width: `${posterUploadProgress}%` }}
+                />
               </div>
-            )}
+            </div>
           </div>
         )}
 
@@ -849,99 +672,7 @@ export const AnimeUploadForm = () => {
             </div>
           )}
 
-          {/* Video Upload Method Selection */}
-          <div>
-            <Label className="text-white">Video Source *</Label>
-            <div className="mt-2 flex gap-4">
-              <button
-                type="button"
-                onClick={() => setUploadMethod('drive')}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-colors ${
-                  uploadMethod === 'drive'
-                    ? 'bg-red-600 border-red-600 text-white'
-                    : 'border-gray-600 text-gray-400 hover:border-red-500 hover:text-red-500'
-                }`}
-              >
-                <LinkIcon size={16} />
-                <span>Google Drive Link</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setUploadMethod('upload')}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-colors ${
-                  uploadMethod === 'upload'
-                    ? 'bg-red-600 border-red-600 text-white'
-                    : 'border-gray-600 text-gray-400 hover:border-red-500 hover:text-red-500'
-                }`}
-              >
-                <FileVideo size={16} />
-                <span>Upload Video</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Google Drive Link or Video Upload */}
-          {uploadMethod === 'drive' ? (
-            <div>
-              <Label htmlFor="driveLink" className="text-white flex items-center gap-2">
-                <LinkIcon size={16} />
-                Google Drive Video Link *
-              </Label>
-              <Input
-                id="driveLink"
-                name="driveLink"
-                value={formData.driveLink}
-                onChange={handleInputChange}
-                required
-                className="bg-gray-800 border-gray-600 text-white"
-                placeholder="https://drive.google.com/file/d/FILE_ID/view"
-              />
-            </div>
-          ) : (
-            <div>
-              <Label className="text-white flex items-center gap-2">
-                <Video size={16} />
-                Upload Video *
-              </Label>
-              <div 
-                className={`mt-2 border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
-                  dragActive ? 'border-red-500 bg-red-500/10' : 'border-gray-600'
-                }`}
-                onDragEnter={handleDrag}
-                onDragLeave={handleDrag}
-                onDragOver={handleDrag}
-                onDrop={handleDrop}
-              >
-                {uploading ? (
-                  <div className="space-y-4">
-                    <FileVideo className="w-12 h-12 text-red-500 mx-auto animate-pulse" />
-                    <p className="text-gray-300">Uploading video...</p>
-                  </div>
-                ) : formData.driveLink && videoFile ? (
-                  <div className="space-y-2">
-                    <FileVideo className="w-12 h-12 text-green-500 mx-auto" />
-                    <p className="text-green-400">Video uploaded successfully!</p>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    <Upload className="w-12 h-12 text-gray-400 mx-auto" />
-                    <div>
-                      <p className="text-gray-300 mb-2">Drop your video file here or click to browse</p>
-                      <Input
-                        id="video"
-                        type="file"
-                        accept="video/*"
-                        onChange={handleVideoChange}
-                        className="bg-gray-800 border-gray-600 text-white file:bg-gray-700 file:text-white file:border-0 file:rounded file:px-4 file:py-2 file:mr-4"
-                      />
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Genre, Year, Episodes, Status */}
+          {/* Genre, Year, Status */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="genre" className="text-white">Genre *</Label>
@@ -968,20 +699,6 @@ export const AnimeUploadForm = () => {
                 min="1900"
                 max={new Date().getFullYear() + 5}
                 value={formData.releaseYear}
-                onChange={handleInputChange}
-                required
-                className="bg-gray-800 border-gray-600 text-white"
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="episodes" className="text-white">Episodes *</Label>
-              <Input
-                id="episodes"
-                name="episodes"
-                type="number"
-                min="1"
-                value={formData.episodes}
                 onChange={handleInputChange}
                 required
                 className="bg-gray-800 border-gray-600 text-white"
@@ -1066,13 +783,11 @@ export const AnimeUploadForm = () => {
 
           <Button
             type="submit"
-            disabled={loading || uploading || posterUploading}
+            disabled={loading || posterUploading}
             className="w-full bg-red-600 hover:bg-red-700 flex items-center justify-center gap-2"
           >
             {loading ? (
               'Saving Anime Details...'
-            ) : uploading ? (
-              'Uploading Video...'
             ) : posterUploading ? (
               'Uploading Poster...'
             ) : (
