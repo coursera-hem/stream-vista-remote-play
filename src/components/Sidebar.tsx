@@ -59,6 +59,18 @@ export const Sidebar: React.FC<SidebarProps> = ({ onLogout, isLoggedIn, onLogin 
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, focusedIndex, menuItems]);
 
+  const handleProfileClick = () => {
+    console.log('Profile button clicked, navigating to /profile');
+    navigate('/profile');
+    setIsOpen(false);
+  };
+
+  const handleLogoutClick = () => {
+    console.log('Logout button clicked');
+    onLogout();
+    setIsOpen(false);
+  };
+
   return (
     <>
       {/* Mobile Toggle Button */}
@@ -128,11 +140,20 @@ export const Sidebar: React.FC<SidebarProps> = ({ onLogout, isLoggedIn, onLogin 
                   )}
                 </div>
               </div>
+              
+              {/* Profile Button */}
               <Button
-                onClick={() => {
-                  onLogout();
-                  setIsOpen(false);
-                }}
+                onClick={handleProfileClick}
+                variant="outline"
+                className="w-full border-gray-600 text-white hover:bg-gray-800 mb-2"
+              >
+                <User size={16} className="mr-2" />
+                Profile
+              </Button>
+              
+              {/* Logout Button */}
+              <Button
+                onClick={handleLogoutClick}
                 variant="outline"
                 className="w-full border-gray-600 text-white hover:bg-gray-800"
               >
