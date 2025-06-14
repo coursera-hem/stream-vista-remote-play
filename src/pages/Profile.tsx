@@ -6,18 +6,17 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
-import { Camera, Save } from 'lucide-react';
+import { Save, Link as LinkIcon } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const Profile = () => {
-  const { currentUser, userData, logout, updateUserProfile, updateProfileImage } = useAuth();
+  const { currentUser, userData, logout, updateUserProfile } = useAuth();
   const navigate = useNavigate();
-  const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [name, setName] = useState(userData?.name || '');
   const [email, setEmail] = useState(userData?.email || '');
+  const [profileImageUrl, setProfileImageUrl] = useState(userData?.profileImage || '');
   const [loading, setLoading] = useState(false);
-  const [photoLoading, setPhotoLoading] = useState(false);
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
 
@@ -36,39 +35,17 @@ const Profile = () => {
     setLoading(true);
 
     try {
-      await updateUserProfile({ name, email });
+      await updateUserProfile({ 
+        name, 
+        email,
+        profileImage: profileImageUrl.trim() || undefined
+      });
       setSuccess('Profile updated successfully!');
     } catch (error: any) {
       setError(error.message);
     } finally {
       setLoading(false);
     }
-  };
-
-  const handlePhotoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    setError('');
-    setSuccess('');
-    setPhotoLoading(true);
-
-    try {
-      await updateProfileImage(file);
-      setSuccess('Profile photo updated successfully!');
-    } catch (error: any) {
-      setError(error.message);
-    } finally {
-      setPhotoLoading(false);
-      // Reset the file input
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
-    }
-  };
-
-  const triggerFileUpload = () => {
-    fileInputRef.current?.click();
   };
 
   if (!currentUser) {
@@ -90,30 +67,14 @@ const Profile = () => {
         <h1 className="text-4xl font-bold text-white mb-8">Profile</h1>
         
         <div className="bg-gray-900 rounded-lg p-6 space-y-6">
-          {/* Profile Image */}
+          {/* Profile Image Preview */}
           <div className="flex items-center space-x-4">
-            <div className="relative">
-              <Avatar className="w-20 h-20">
-                <AvatarImage src={userData?.profileImage} />
-                <AvatarFallback className="bg-red-600 text-white text-2xl">
-                  {userData?.name?.charAt(0)?.toUpperCase() || 'U'}
-                </AvatarFallback>
-              </Avatar>
-              <button 
-                onClick={triggerFileUpload}
-                disabled={photoLoading}
-                className="absolute bottom-0 right-0 bg-red-600 hover:bg-red-700 disabled:opacity-50 p-2 rounded-full transition-colors"
-              >
-                <Camera size={16} />
-              </button>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                onChange={handlePhotoUpload}
-                className="hidden"
-              />
-            </div>
+            <Avatar className="w-20 h-20">
+              <AvatarImage src={profileImageUrl || userData?.profileImage} />
+              <AvatarFallback className="bg-red-600 text-white text-2xl">
+                {userData?.name?.charAt(0)?.toUpperCase() || 'U'}
+              </AvatarFallback>
+            </Avatar>
             <div>
               <h3 className="text-xl font-semibold text-white">{userData?.name}</h3>
               <p className="text-gray-400">{userData?.email}</p>
@@ -121,9 +82,6 @@ const Profile = () => {
                 <span className="inline-block bg-red-600 text-white text-xs px-2 py-1 rounded mt-1">
                   Admin
                 </span>
-              )}
-              {photoLoading && (
-                <p className="text-sm text-blue-400 mt-1">Uploading photo...</p>
               )}
             </div>
           </div>
@@ -142,6 +100,24 @@ const Profile = () => {
 
           {/* Profile Form */}
           <div className="space-y-4">
+            <div>
+              <Label htmlFor="profileImage" className="text-white flex items-center gap-2">
+                <LinkIcon size={16} />
+                Profile Image URL
+              </Label>
+              <Input
+                id="profileImage"
+                type="url"
+                value={profileImageUrl}
+                onChange={(e) => setProfileImageUrl(e.target.value)}
+                className="bg-gray-800 border-gray-600 text-white"
+                placeholder="https://example.com/your-profile-image.jpg"
+              />
+              <p className="text-sm text-gray-400 mt-1">
+                Enter a direct link to your profile image (JPEG, PNG, GIF, WebP)
+              </p>
+            </div>
+
             <div>
               <Label htmlFor="name" className="text-white">Full Name</Label>
               <Input
