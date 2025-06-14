@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { Navigation } from '../components/Navigation';
@@ -22,6 +21,17 @@ interface Series {
   status: 'ongoing' | 'completed';
 }
 
+interface MovieForPlayer {
+  id: string;
+  title: string;
+  poster: string;
+  year: number;
+  genre: string;
+  rating: number;
+  duration: string;
+  videoUrl: string;
+}
+
 const Series = () => {
   const { currentUser, userData, logout } = useAuth();
   const navigate = useNavigate();
@@ -29,6 +39,7 @@ const Series = () => {
   const [episodes, setEpisodes] = useState<Episode[]>([]);
   const [selectedSeries, setSelectedSeries] = useState<Series | null>(null);
   const [selectedEpisode, setSelectedEpisode] = useState<Episode | null>(null);
+  const [movieForPlayer, setMovieForPlayer] = useState<MovieForPlayer | null>(null);
   const [loading, setLoading] = useState(true);
 
   const handleLogin = () => {
@@ -96,11 +107,12 @@ const Series = () => {
   const handleSeriesSelect = (seriesItem: Series) => {
     setSelectedSeries(seriesItem);
     setSelectedEpisode(null);
+    setMovieForPlayer(null);
   };
 
   const handleEpisodeSelect = (episode: Episode) => {
     // Convert episode to movie format for VideoPlayer
-    const movieForPlayer = {
+    const movieData = {
       id: episode.id,
       title: `${selectedSeries?.title} - Episode ${episode.episodeNumber}: ${episode.title}`,
       poster: selectedSeries?.poster || '',
@@ -110,11 +122,13 @@ const Series = () => {
       duration: episode.duration,
       videoUrl: episode.videoUrl
     };
-    setSelectedEpisode({ ...episode, movieForPlayer });
+    setSelectedEpisode(episode);
+    setMovieForPlayer(movieData);
   };
 
   const handleBackFromPlayer = () => {
     setSelectedEpisode(null);
+    setMovieForPlayer(null);
   };
 
   if (loading) {
@@ -126,10 +140,10 @@ const Series = () => {
   }
 
   // Show video player if episode is selected
-  if (selectedEpisode && selectedEpisode.movieForPlayer) {
+  if (movieForPlayer) {
     return (
       <VideoPlayer
-        movie={selectedEpisode.movieForPlayer}
+        movie={movieForPlayer}
         onBack={handleBackFromPlayer}
       />
     );
