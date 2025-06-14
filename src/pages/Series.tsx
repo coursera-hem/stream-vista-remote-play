@@ -1,7 +1,5 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { Navigation } from '../components/Navigation';
 import { Sidebar } from '../components/Sidebar';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../config/firebase';
@@ -42,16 +40,24 @@ const Series = () => {
   useEffect(() => {
     const fetchSeries = async () => {
       try {
+        console.log('Fetching series from Firestore...');
         const seriesQuery = query(
           collection(db, 'movies'),
           where('type', '==', 'series')
         );
         const querySnapshot = await getDocs(seriesQuery);
-        const seriesData = querySnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        })) as Series[];
+        console.log('Series query results:', querySnapshot.docs.length);
         
+        const seriesData = querySnapshot.docs.map(doc => {
+          const data = doc.data();
+          console.log('Series document:', doc.id, data);
+          return {
+            id: doc.id,
+            ...data
+          };
+        }) as Series[];
+        
+        console.log('Processed series data:', seriesData);
         setSeries(seriesData);
       } catch (error) {
         console.error('Error fetching series:', error);
@@ -105,23 +111,15 @@ const Series = () => {
 
   return (
     <div className="min-h-screen bg-black text-white">
-      <Navigation
-        onSearch={() => {}}
-        onLogin={handleLogin}
-        isLoggedIn={!!currentUser}
-        onLogout={handleLogout}
-        currentUser={userData ? { name: userData.name, email: userData.email } : undefined}
-      />
-      
       <Sidebar
         onLogout={handleLogout}
         isLoggedIn={!!currentUser}
         onLogin={handleLogin}
       />
 
-      <div className="pt-20 px-6">
+      <div className="pl-6 pr-6">
         <div className="max-w-7xl mx-auto">
-          <h1 className="text-4xl font-bold text-white mb-8">Series</h1>
+          <h1 className="text-4xl font-bold text-white mb-8 pt-6">Series</h1>
           
           {series.length === 0 ? (
             <div className="text-center py-12">
