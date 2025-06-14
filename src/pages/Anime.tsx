@@ -80,7 +80,7 @@ const Anime = () => {
           onLogin={() => setShowLoginModal(true)}
         />
 
-        <main className="px-6 py-8">
+        <main className="pt-16 px-6 py-8">
           <div className="max-w-7xl mx-auto">
             <div className="flex items-center justify-center py-20">
               <div className="text-white text-xl">Loading anime collection...</div>
@@ -99,7 +99,7 @@ const Anime = () => {
         onLogin={() => setShowLoginModal(true)}
       />
 
-      <main className="px-6 py-8">
+      <main className="pt-16 px-6 py-8">
         <div className="max-w-7xl mx-auto">
           <h1 className="text-4xl font-bold mb-8">Anime Collection</h1>
           
