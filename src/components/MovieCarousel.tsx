@@ -42,7 +42,7 @@ export const MovieCarousel: React.FC<MovieCarouselProps> = ({
 
   const scroll = (direction: 'left' | 'right') => {
     if (scrollRef.current) {
-      const scrollAmount = window.innerWidth < 640 ? 200 : window.innerWidth < 1024 ? 300 : 400;
+      const scrollAmount = 300;
       scrollRef.current.scrollBy({
         left: direction === 'left' ? -scrollAmount : scrollAmount,
         behavior: 'smooth'
@@ -51,34 +51,34 @@ export const MovieCarousel: React.FC<MovieCarouselProps> = ({
   };
 
   return (
-    <div className="mb-8 sm:mb-10 lg:mb-12 mt-6 sm:mt-8">
-      <h2 className="text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold text-white mb-4 sm:mb-6 px-4 sm:px-6 lg:px-8 xl:px-12">{title}</h2>
+    <div className="mb-12 mt-8">
+      <h2 className="text-2xl font-bold text-white mb-6 px-12">{title}</h2>
       
       <div className="relative group">
         {/* Left scroll button */}
         <button
           onClick={() => scroll('left')}
-          className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 z-20 w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 bg-black/60 hover:bg-black/80 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+          className="absolute left-4 top-1/2 -translate-y-1/2 z-20 w-12 h-12 bg-black/60 hover:bg-black/80 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
         >
-          <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-white" />
+          <ChevronLeft className="w-6 h-6 text-white" />
         </button>
 
         {/* Right scroll button */}
         <button
           onClick={() => scroll('right')}
-          className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 z-20 w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 bg-black/60 hover:bg-black/80 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+          className="absolute right-4 top-1/2 -translate-y-1/2 z-20 w-12 h-12 bg-black/60 hover:bg-black/80 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
         >
-          <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-white" />
+          <ChevronRight className="w-6 h-6 text-white" />
         </button>
 
         {/* Movie cards container */}
         <div
           ref={scrollRef}
-          className="flex gap-3 sm:gap-4 lg:gap-6 xl:gap-8 overflow-x-auto scrollbar-hide px-4 sm:px-6 lg:px-8 xl:px-12 pb-2"
+          className="flex gap-8 overflow-x-auto scrollbar-hide px-12 pb-2"
           style={{ scrollSnapType: 'x mandatory' }}
         >
           {movies.map((movie, index) => (
-            <div key={movie.id} style={{ scrollSnapAlign: 'start' }} className="flex-shrink-0">
+            <div key={movie.id} style={{ scrollSnapAlign: 'start' }}>
               <MovieCard
                 movie={movie}
                 focusId={`home-${rowIndex}-${index}`}

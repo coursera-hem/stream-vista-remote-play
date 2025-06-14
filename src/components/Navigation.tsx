@@ -48,61 +48,61 @@ export const Navigation: React.FC<NavigationProps> = ({
   return (
     <>
       <nav className="fixed top-0 left-0 right-0 z-40 bg-black/90 backdrop-blur-sm border-b border-gray-800">
-        <div className="flex items-center justify-between px-3 sm:px-6 lg:px-8 xl:px-12 py-3 sm:py-4">
+        <div className="flex items-center justify-between px-6 py-4">
           {/* Logo */}
-          <div className="flex items-center gap-4 sm:gap-6 lg:gap-8">
+          <div className="flex items-center gap-8">
             <h1 
-              className="text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold text-red-600 cursor-pointer"
+              className="text-2xl font-bold text-red-600 cursor-pointer"
               onClick={() => navigate('/')}
             >
               Hem's Flix
             </h1>
             
-            {/* Navigation links - Hidden on mobile and small tablets */}
-            <div className="hidden lg:flex items-center gap-4 xl:gap-6 2xl:gap-8">
+            {/* Navigation links - Desktop only */}
+            <div className="hidden md:flex items-center gap-6">
               <button 
                 onClick={() => navigate('/')}
-                className="text-white hover:text-gray-300 transition-colors flex items-center gap-2 text-sm xl:text-base"
+                className="text-white hover:text-gray-300 transition-colors flex items-center gap-2"
               >
-                <Home className="w-4 h-4 xl:w-5 xl:h-5" />
+                <Home className="w-4 h-4" />
                 Home
               </button>
               <button 
                 onClick={() => navigate('/movies')}
-                className="text-white hover:text-gray-300 transition-colors flex items-center gap-2 text-sm xl:text-base"
+                className="text-white hover:text-gray-300 transition-colors flex items-center gap-2"
               >
-                <Film className="w-4 h-4 xl:w-5 xl:h-5" />
+                <Film className="w-4 h-4" />
                 Movies
               </button>
               <button 
                 onClick={() => navigate('/series')}
-                className="text-white hover:text-gray-300 transition-colors flex items-center gap-2 text-sm xl:text-base"
+                className="text-white hover:text-gray-300 transition-colors flex items-center gap-2"
               >
-                <PlaySquare className="w-4 h-4 xl:w-5 xl:h-5" />
+                <PlaySquare className="w-4 h-4" />
                 Series
               </button>
               <button 
                 onClick={() => navigate('/anime')}
-                className="text-white hover:text-gray-300 transition-colors flex items-center gap-2 text-sm xl:text-base"
+                className="text-white hover:text-gray-300 transition-colors flex items-center gap-2"
               >
-                <Tv className="w-4 h-4 xl:w-5 xl:h-5" />
+                <Tv className="w-4 h-4" />
                 Anime
               </button>
               {isLoggedIn && (
                 <button 
                   onClick={() => navigate('/mylist')}
-                  className="text-white hover:text-gray-300 transition-colors flex items-center gap-2 text-sm xl:text-base"
+                  className="text-white hover:text-gray-300 transition-colors flex items-center gap-2"
                 >
-                  <Bookmark className="w-4 h-4 xl:w-5 xl:h-5" />
+                  <Bookmark className="w-4 h-4" />
                   My List
                 </button>
               )}
               {userData?.isAdmin && (
                 <button 
                   onClick={handleAdminClick}
-                  className="text-white hover:text-gray-300 transition-colors flex items-center gap-2 text-sm xl:text-base"
+                  className="text-white hover:text-gray-300 transition-colors flex items-center gap-2"
                 >
-                  <UserCog className="w-4 h-4 xl:w-5 xl:h-5" />
+                  <UserCog className="w-4 h-4" />
                   Admin Panel
                 </button>
               )}
@@ -110,13 +110,13 @@ export const Navigation: React.FC<NavigationProps> = ({
           </div>
 
           {/* Right side actions */}
-          <div className="flex items-center gap-2 sm:gap-3 lg:gap-4">
+          <div className="flex items-center gap-4">
             {/* Search button */}
             <button
               onClick={onSearch}
-              className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 bg-gray-800 hover:bg-gray-700 rounded-full flex items-center justify-center transition-colors"
+              className="w-10 h-10 bg-gray-800 hover:bg-gray-700 rounded-full flex items-center justify-center transition-colors"
             >
-              <Search className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-white" />
+              <Search className="w-5 h-5 text-white" />
             </button>
 
             {/* User menu - Desktop */}
@@ -126,22 +126,22 @@ export const Navigation: React.FC<NavigationProps> = ({
                   onClick={() => setShowUserMenu(!showUserMenu)}
                   className="transition-colors"
                 >
-                  <Avatar className={`w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 ${userData?.profileImage ? 'border-0' : 'border-2 border-red-600'} hover:border-red-500`}>
+                  <Avatar className={`w-10 h-10 ${userData?.profileImage ? 'border-0' : 'border-2 border-red-600'} hover:border-red-500`}>
                     <AvatarImage 
                       src={userData?.profileImage} 
                       alt={userData?.name || 'Profile'}
                     />
-                    <AvatarFallback className="bg-red-600 text-white text-xs sm:text-sm lg:text-base">
+                    <AvatarFallback className="bg-red-600 text-white">
                       {userData?.name?.charAt(0)?.toUpperCase() || 'U'}
                     </AvatarFallback>
                   </Avatar>
                 </button>
                 
                 {showUserMenu && (
-                  <div className="absolute right-0 top-12 lg:top-14 w-56 lg:w-64 xl:w-72 bg-gray-900 border border-gray-700 rounded-lg shadow-xl">
-                    <div className="p-3 lg:p-4 border-b border-gray-700">
-                      <p className="text-white font-semibold text-sm lg:text-base">{userData?.name || currentUser?.name || 'User'}</p>
-                      <p className="text-gray-400 text-xs lg:text-sm">{userData?.email || currentUser?.email || 'user@example.com'}</p>
+                  <div className="absolute right-0 top-12 w-64 bg-gray-900 border border-gray-700 rounded-lg shadow-xl">
+                    <div className="p-4 border-b border-gray-700">
+                      <p className="text-white font-semibold">{userData?.name || currentUser?.name || 'User'}</p>
+                      <p className="text-gray-400 text-sm">{userData?.email || currentUser?.email || 'user@example.com'}</p>
                       {userData?.isAdmin && (
                         <span className="inline-block bg-red-600 text-white text-xs px-2 py-1 rounded mt-1">
                           Admin
@@ -154,16 +154,16 @@ export const Navigation: React.FC<NavigationProps> = ({
                           navigate('/profile');
                           setShowUserMenu(false);
                         }}
-                        className="w-full flex items-center gap-3 px-3 py-2 text-white hover:bg-gray-800 rounded transition-colors text-sm lg:text-base"
+                        className="w-full flex items-center gap-3 px-3 py-2 text-white hover:bg-gray-800 rounded transition-colors"
                       >
-                        <User className="w-4 h-4 lg:w-5 lg:h-5" />
+                        <User className="w-4 h-4" />
                         Profile
                       </button>
                       <button
                         onClick={onLogout}
-                        className="w-full flex items-center gap-3 px-3 py-2 text-white hover:bg-gray-800 rounded transition-colors text-sm lg:text-base"
+                        className="w-full flex items-center gap-3 px-3 py-2 text-white hover:bg-gray-800 rounded transition-colors"
                       >
-                        <LogOut className="w-4 h-4 lg:w-5 lg:h-5" />
+                        <LogOut className="w-4 h-4" />
                         Sign Out
                       </button>
                     </div>
@@ -173,7 +173,7 @@ export const Navigation: React.FC<NavigationProps> = ({
             ) : (
               <button
                 onClick={onLogin}
-                className="hidden md:block bg-red-600 hover:bg-red-700 text-white px-3 sm:px-4 lg:px-6 py-2 rounded-lg font-semibold transition-colors text-xs sm:text-sm lg:text-base"
+                className="hidden md:block bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg font-semibold transition-colors"
               >
                 Sign In
               </button>
@@ -182,9 +182,9 @@ export const Navigation: React.FC<NavigationProps> = ({
             {/* Mobile menu button */}
             <button 
               onClick={() => setShowMobileMenu(!showMobileMenu)}
-              className="lg:hidden w-8 h-8 sm:w-10 sm:h-10 bg-gray-800 hover:bg-gray-700 rounded-full flex items-center justify-center transition-colors"
+              className="md:hidden w-10 h-10 bg-gray-800 hover:bg-gray-700 rounded-full flex items-center justify-center transition-colors"
             >
-              {showMobileMenu ? <X className="w-4 h-4 sm:w-5 sm:h-5 text-white" /> : <Menu className="w-4 h-4 sm:w-5 sm:h-5 text-white" />}
+              {showMobileMenu ? <X className="w-5 h-5 text-white" /> : <Menu className="w-5 h-5 text-white" />}
             </button>
           </div>
         </div>
@@ -192,13 +192,13 @@ export const Navigation: React.FC<NavigationProps> = ({
 
       {/* Mobile Menu Overlay */}
       {showMobileMenu && (
-        <div className="fixed inset-0 z-30 lg:hidden">
+        <div className="fixed inset-0 z-30 md:hidden">
           <div
             className="fixed inset-0 bg-black/50"
             onClick={() => setShowMobileMenu(false)}
           />
-          <div className="fixed top-0 right-0 h-full w-72 sm:w-80 bg-black/95 backdrop-blur-sm border-l border-gray-800 pt-16 sm:pt-20">
-            <div className="p-4 sm:p-6">
+          <div className="fixed top-0 right-0 h-full w-64 bg-black/95 backdrop-blur-sm border-l border-gray-800 pt-20">
+            <div className="p-4">
               {/* Mobile Navigation Menu */}
               <nav className="space-y-2">
                 {menuItems.map((item) => {
@@ -207,9 +207,9 @@ export const Navigation: React.FC<NavigationProps> = ({
                     <button
                       key={item.id}
                       onClick={() => handleMobileMenuItemClick(item.path)}
-                      className="w-full flex items-center gap-4 px-4 py-3 sm:py-4 text-white hover:bg-gray-800 rounded-lg transition-colors text-base sm:text-lg"
+                      className="w-full flex items-center gap-3 px-4 py-3 text-white hover:bg-gray-800 rounded-lg transition-colors"
                     >
-                      <Icon size={20} className="sm:w-6 sm:h-6" />
+                      <Icon size={20} />
                       <span>{item.label}</span>
                     </button>
                   );
@@ -217,11 +217,11 @@ export const Navigation: React.FC<NavigationProps> = ({
               </nav>
 
               {/* Mobile User Section */}
-              <div className="mt-8 pt-6 border-t border-gray-700">
+              <div className="mt-8 pt-4 border-t border-gray-700">
                 {isLoggedIn ? (
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-4 px-4 py-3 bg-gray-800 rounded-lg">
-                      <Avatar className="w-10 h-10 sm:w-12 sm:h-12">
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-3 px-4 py-2 bg-gray-800 rounded-lg">
+                      <Avatar className="w-8 h-8">
                         <AvatarImage 
                           src={userData?.profileImage} 
                           alt={userData?.name || 'Profile'}
@@ -231,7 +231,7 @@ export const Navigation: React.FC<NavigationProps> = ({
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex-1 truncate">
-                        <p className="text-white font-medium truncate text-sm sm:text-base">
+                        <p className="text-white text-sm font-medium truncate">
                           {userData?.name || currentUser?.name || 'User'}
                         </p>
                         {userData?.isAdmin && (
@@ -244,9 +244,9 @@ export const Navigation: React.FC<NavigationProps> = ({
                         navigate('/profile');
                         setShowMobileMenu(false);
                       }}
-                      className="w-full flex items-center gap-4 px-4 py-3 text-white hover:bg-gray-800 rounded-lg transition-colors text-base sm:text-lg"
+                      className="w-full flex items-center gap-3 px-4 py-2 text-white hover:bg-gray-800 rounded-lg transition-colors"
                     >
-                      <User size={20} className="sm:w-6 sm:h-6" />
+                      <User size={16} />
                       Profile
                     </button>
                     <button
@@ -254,9 +254,9 @@ export const Navigation: React.FC<NavigationProps> = ({
                         onLogout();
                         setShowMobileMenu(false);
                       }}
-                      className="w-full flex items-center gap-4 px-4 py-3 text-white hover:bg-gray-800 rounded-lg transition-colors text-base sm:text-lg"
+                      className="w-full flex items-center gap-3 px-4 py-2 text-white hover:bg-gray-800 rounded-lg transition-colors"
                     >
-                      <LogOut size={20} className="sm:w-6 sm:h-6" />
+                      <LogOut size={16} />
                       Sign Out
                     </button>
                   </div>
@@ -266,7 +266,7 @@ export const Navigation: React.FC<NavigationProps> = ({
                       onLogin();
                       setShowMobileMenu(false);
                     }}
-                    className="w-full bg-red-600 hover:bg-red-700 text-white px-4 py-3 sm:py-4 rounded-lg font-semibold transition-colors text-base sm:text-lg"
+                    className="w-full bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-semibold transition-colors"
                   >
                     Sign In
                   </button>
