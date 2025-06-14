@@ -1,8 +1,6 @@
 
-import React from 'react';
-import { Card, CardContent } from './ui/card';
-import { Badge } from './ui/badge';
-import { Play, Calendar, Star } from 'lucide-react';
+import React, { useState } from 'react';
+import { Play, Star, Calendar, Tv } from 'lucide-react';
 
 interface Series {
   id: string;
@@ -23,70 +21,93 @@ interface SeriesCardProps {
 }
 
 export const SeriesCard: React.FC<SeriesCardProps> = ({ series, onSelect }) => {
+  const [imageError, setImageError] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
+
+  const handleImageError = () => {
+    console.log('Image failed to load for series:', series.title);
+    console.log('Image URL:', series.poster);
+    setImageError(true);
+  };
+
+  const handleImageLoad = () => {
+    console.log('Image loaded successfully for series:', series.title);
+    setImageLoaded(true);
+  };
+
+  const handleCardClick = () => {
+    onSelect(series);
+  };
+
+  const handlePlayClick = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent card click when play button is clicked
+    onSelect(series);
+  };
+
   return (
-    <Card
-      className="group cursor-pointer bg-gray-900 border-gray-800 hover:border-red-500 transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-red-500/20"
-      onClick={() => onSelect(series)}
+    <div 
+      className="bg-gray-800 rounded-lg overflow-hidden hover:scale-105 transition-transform duration-300 group cursor-pointer"
+      onClick={handleCardClick}
     >
-      <div className="relative overflow-hidden rounded-t-lg">
-        <div className="aspect-[2/3] bg-gray-800">
+      <div className="relative">
+        {imageError ? (
+          <div className="w-full h-64 bg-gray-700 flex items-center justify-center">
+            <div className="text-center text-white p-4">
+              <div className="text-sm mb-2">Image not available</div>
+              <div className="text-xs text-gray-400 break-all">{series.poster}</div>
+            </div>
+          </div>
+        ) : (
           <img
             src={series.poster}
             alt={series.title}
-            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-            onError={(e) => {
-              const target = e.target as HTMLImageElement;
-              target.src = `https://via.placeholder.com/300x450/1f2937/ffffff?text=${encodeURIComponent(series.title)}`;
-            }}
+            className="w-full h-64 object-cover"
+            onError={handleImageError}
+            onLoad={handleImageLoad}
           />
-        </div>
+        )}
         
-        {/* Status Badge */}
-        <Badge 
-          className={`absolute top-3 right-3 ${
-            series.status === 'completed' 
-              ? 'bg-green-600 hover:bg-green-700' 
-              : 'bg-blue-600 hover:bg-blue-700'
-          }`}
-        >
-          {series.status}
-        </Badge>
-        
-        {/* Play Button Overlay */}
-        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-          <div className="bg-red-600 rounded-full p-4 transform scale-75 group-hover:scale-100 transition-transform duration-300">
-            <Play className="w-6 h-6 text-white fill-white" />
+        {/* Loading indicator */}
+        {!imageLoaded && !imageError && (
+          <div className="absolute inset-0 bg-gray-700 flex items-center justify-center">
+            <div className="text-white text-sm">Loading...</div>
           </div>
+        )}
+        
+        <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-opacity duration-300 flex items-center justify-center">
+          <button
+            onClick={handlePlayClick}
+            className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-red-600 text-white rounded-full p-3 hover:bg-red-700"
+          >
+            <Play size={24} fill="white" />
+          </button>
+        </div>
+        <div className="absolute top-2 right-2 bg-black bg-opacity-70 text-white px-2 py-1 rounded text-sm">
+          {series.status}
         </div>
       </div>
       
-      <CardContent className="p-4 space-y-3">
-        <div>
-          <h3 className="text-white font-bold text-lg group-hover:text-red-400 transition-colors line-clamp-2">
-            {series.title}
-          </h3>
-          <p className="text-gray-400 text-sm mt-1 line-clamp-2">{series.description}</p>
-        </div>
-        
-        <div className="flex items-center justify-between text-xs text-gray-500">
+      <div className="p-4">
+        <h3 className="text-white font-semibold text-lg mb-2 truncate">{series.title}</h3>
+        <div className="flex items-center gap-4 text-gray-400 text-sm mb-2">
           <div className="flex items-center gap-1">
-            <Calendar className="w-3 h-3" />
+            <Star size={14} className="text-yellow-500" fill="currentColor" />
+            <span>4.5</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <Calendar size={14} />
             <span>{series.releaseYear}</span>
           </div>
           {series.totalEpisodes && (
             <div className="flex items-center gap-1">
-              <Star className="w-3 h-3" />
-              <span>{series.totalEpisodes} episodes</span>
+              <Tv size={14} />
+              <span>{series.totalEpisodes} ep</span>
             </div>
           )}
         </div>
-        
-        <div className="pt-2">
-          <Badge variant="outline" className="text-xs border-gray-600 text-gray-300">
-            {series.genre}
-          </Badge>
-        </div>
-      </CardContent>
-    </Card>
+        <p className="text-red-500 text-sm mb-2">{series.genre}</p>
+        <p className="text-gray-400 text-sm line-clamp-2">{series.description}</p>
+      </div>
+    </div>
   );
 };
