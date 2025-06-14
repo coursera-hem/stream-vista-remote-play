@@ -142,7 +142,7 @@ const Series = () => {
             <div className="space-y-8">
               <SeriesManager 
                 onBack={() => {}}
-                onManageEpisodes={(series) => setSelectedSeries(series)}
+                onManageEpisodes={(seriesItem) => setSelectedSeries(seriesItem)}
               />
               
               {selectedSeries && (
@@ -153,10 +153,11 @@ const Series = () => {
                   
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <EpisodeUploadForm 
-                      onEpisodeUploaded={refreshEpisodes}
+                      seriesId={selectedSeries.id}
+                      onEpisodeAdded={refreshEpisodes}
                     />
                     <EpisodeManager 
-                      episodes={episodes}
+                      seriesId={selectedSeries.id}
                       onEpisodeSelect={handleEpisodeSelect}
                       selectedEpisode={selectedEpisode}
                     />
