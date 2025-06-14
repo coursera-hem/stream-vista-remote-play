@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { collection, getDocs, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '../config/firebase';
@@ -165,10 +164,7 @@ export const AnimeManager: React.FC<AnimeManagerProps> = ({ onBack, onManageEpis
           </Button>
           <h2 className="text-2xl font-bold text-white">Upload New Anime</h2>
         </div>
-        <AnimeUploadForm onAnimeAdded={() => {
-          setShowUploadForm(false);
-          fetchAnimes();
-        }} />
+        <AnimeUploadForm />
       </div>
     );
   }

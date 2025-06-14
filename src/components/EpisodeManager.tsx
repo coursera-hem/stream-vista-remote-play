@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect } from 'react';
-import { collection, query, where, getDocs, deleteDoc, doc, orderBy } from 'firebase/firestore';
+import { collection, query, where, getDocs, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -50,23 +49,16 @@ export const EpisodeManager: React.FC<EpisodeManagerProps> = ({
       setFetchError(null);
       console.log('Starting to fetch episodes for animeId:', animeId);
       
-      // Test Firebase connection first
-      console.log('Testing Firebase connection...');
-      const testCollection = collection(db, 'episodes');
-      console.log('Episodes collection reference created:', testCollection);
-      
+      // Simplified query without orderBy to avoid composite index requirement
       const q = query(
-        testCollection,
-        where('animeId', '==', animeId),
-        orderBy('episodeNumber', 'asc')
+        collection(db, 'episodes'),
+        where('animeId', '==', animeId)
       );
       
       console.log('Episodes query created for animeId:', animeId);
       const querySnapshot = await getDocs(q);
       console.log('Episodes query executed successfully');
-      console.log('Query snapshot:', querySnapshot);
       console.log('Number of episodes found:', querySnapshot.size);
-      console.log('Query snapshot empty:', querySnapshot.empty);
       
       if (querySnapshot.empty) {
         console.log('No episodes found in Firebase for animeId:', animeId);
@@ -96,27 +88,17 @@ export const EpisodeManager: React.FC<EpisodeManagerProps> = ({
         };
         
         episodeList.push(episode);
-        console.log('Added episode to list:', episode);
       });
       
-      console.log('Final episode list:', episodeList);
+      // Sort episodes by episode number on the client side
+      episodeList.sort((a, b) => a.episodeNumber - b.episodeNumber);
+      
+      console.log('Final sorted episode list:', episodeList);
       console.log('Total episodes processed:', episodeList.length);
       setEpisodes(episodeList);
       
-      if (episodeList.length === 0) {
-        console.log('Episode list is empty after processing');
-      } else {
-        console.log(`Successfully loaded ${episodeList.length} episodes`);
-      }
-      
     } catch (error) {
       console.error('Error fetching episodes:', error);
-      console.error('Error details:', {
-        message: error.message,
-        code: error.code,
-        stack: error.stack
-      });
-      
       setFetchError(`Failed to fetch episodes: ${error.message}`);
       toast({
         title: "Error",
