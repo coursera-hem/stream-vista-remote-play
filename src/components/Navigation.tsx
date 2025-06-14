@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Search, Menu, User, Home, Film, Bookmark, LogOut, UserCog, Tv, PlaySquare } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 
 interface NavigationProps {
   onSearch: () => void;
@@ -99,9 +100,14 @@ export const Navigation: React.FC<NavigationProps> = ({
             <div className="relative">
               <button
                 onClick={() => setShowUserMenu(!showUserMenu)}
-                className="w-10 h-10 bg-red-600 hover:bg-red-700 rounded-full flex items-center justify-center transition-colors"
+                className="transition-colors"
               >
-                <User className="w-5 h-5 text-white" />
+                <Avatar className="w-10 h-10 border-2 border-red-600 hover:border-red-500">
+                  <AvatarImage src={userData?.profileImage} />
+                  <AvatarFallback className="bg-red-600 text-white">
+                    {userData?.name?.charAt(0)?.toUpperCase() || 'U'}
+                  </AvatarFallback>
+                </Avatar>
               </button>
               
               {showUserMenu && (
