@@ -7,7 +7,7 @@ import { AnimeUploadForm } from '../components/AnimeUploadForm';
 import { MovieManager } from '../components/MovieManager';
 import { AnimeManager } from '../components/AnimeManager';
 import { Button } from '../components/ui/button';
-import { LogOut, Upload, List, ArrowLeft, Film, Tv, Settings } from 'lucide-react';
+import { LogOut, ArrowLeft, Film, Tv, Settings, List } from 'lucide-react';
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('upload-movie');
@@ -39,57 +39,17 @@ const AdminDashboard = () => {
       <header className="bg-gray-900 border-b border-gray-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-8">
-              <div className="flex items-center gap-4">
-                <Button
-                  onClick={handleBackToHome}
-                  variant="outline"
-                  size="sm"
-                  className="border-gray-600 text-white hover:bg-gray-800"
-                >
-                  <ArrowLeft size={16} className="mr-2" />
-                  Home
-                </Button>
-                <h1 className="text-2xl font-bold text-red-600">StreamFlix Admin</h1>
-              </div>
-              <nav className="flex gap-4">
-                <button
-                  onClick={() => setActiveTab('upload-movie')}
-                  className={`flex items-center gap-2 px-4 py-2 rounded transition-colors ${
-                    activeTab === 'upload-movie' ? 'bg-red-600 text-white' : 'text-gray-300 hover:text-white'
-                  }`}
-                >
-                  <Film size={20} />
-                  Upload Movie
-                </button>
-                <button
-                  onClick={() => setActiveTab('upload-anime')}
-                  className={`flex items-center gap-2 px-4 py-2 rounded transition-colors ${
-                    activeTab === 'upload-anime' ? 'bg-red-600 text-white' : 'text-gray-300 hover:text-white'
-                  }`}
-                >
-                  <Tv size={20} />
-                  Upload Anime
-                </button>
-                <button
-                  onClick={() => setActiveTab('manage-movies')}
-                  className={`flex items-center gap-2 px-4 py-2 rounded transition-colors ${
-                    activeTab === 'manage-movies' ? 'bg-red-600 text-white' : 'text-gray-300 hover:text-white'
-                  }`}
-                >
-                  <Settings size={20} />
-                  Manage Movies
-                </button>
-                <button
-                  onClick={() => setActiveTab('manage-anime')}
-                  className={`flex items-center gap-2 px-4 py-2 rounded transition-colors ${
-                    activeTab === 'manage-anime' ? 'bg-red-600 text-white' : 'text-gray-300 hover:text-white'
-                  }`}
-                >
-                  <List size={20} />
-                  Manage Anime
-                </button>
-              </nav>
+            <div className="flex items-center gap-4">
+              <Button
+                onClick={handleBackToHome}
+                variant="outline"
+                size="sm"
+                className="border-gray-600 text-white hover:bg-gray-800"
+              >
+                <ArrowLeft size={16} className="mr-2" />
+                Home
+              </Button>
+              <h1 className="text-2xl font-bold text-red-600">StreamFlix Admin</h1>
             </div>
             <div className="flex items-center gap-4">
               <span className="text-white">Welcome, {userData.name}</span>
@@ -106,6 +66,50 @@ const AdminDashboard = () => {
           </div>
         </div>
       </header>
+
+      {/* Navigation Section */}
+      <div className="bg-gray-800 border-b border-gray-700">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <nav className="flex gap-4 py-4">
+            <button
+              onClick={() => setActiveTab('upload-movie')}
+              className={`flex items-center gap-2 px-4 py-2 rounded transition-colors ${
+                activeTab === 'upload-movie' ? 'bg-red-600 text-white' : 'text-gray-300 hover:text-white hover:bg-gray-700'
+              }`}
+            >
+              <Film size={20} />
+              Upload Movie
+            </button>
+            <button
+              onClick={() => setActiveTab('upload-anime')}
+              className={`flex items-center gap-2 px-4 py-2 rounded transition-colors ${
+                activeTab === 'upload-anime' ? 'bg-red-600 text-white' : 'text-gray-300 hover:text-white hover:bg-gray-700'
+              }`}
+            >
+              <Tv size={20} />
+              Upload Anime
+            </button>
+            <button
+              onClick={() => setActiveTab('manage-movies')}
+              className={`flex items-center gap-2 px-4 py-2 rounded transition-colors ${
+                activeTab === 'manage-movies' ? 'bg-red-600 text-white' : 'text-gray-300 hover:text-white hover:bg-gray-700'
+              }`}
+            >
+              <Settings size={20} />
+              Manage Movies
+            </button>
+            <button
+              onClick={() => setActiveTab('manage-anime')}
+              className={`flex items-center gap-2 px-4 py-2 rounded transition-colors ${
+                activeTab === 'manage-anime' ? 'bg-red-600 text-white' : 'text-gray-300 hover:text-white hover:bg-gray-700'
+              }`}
+            >
+              <List size={20} />
+              Manage Anime
+            </button>
+          </nav>
+        </div>
+      </div>
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
