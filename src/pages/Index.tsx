@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { collection, getDocs, query, orderBy } from 'firebase/firestore';
 import { db } from '../config/firebase';
@@ -391,34 +392,34 @@ const Index = () => {
 
         {/* Movie Carousels */}
         <div className="relative -mt-32 z-10 space-y-8 pb-20">
-          {/* Recently Added Movies */}
-          <MovieCarousel
-            title="Recently Added"
-            movies={recentMovies}
-            rowIndex={0}
-            onMovieSelect={handleMovieSelect}
-            watchlist={watchlist}
-            onToggleWatchlist={handleToggleWatchlist}
-          />
-
-          {/* Recently Added Anime - New Section */}
-          {featuredAndTrendingAnime.length > 0 && (
+          {/* Recently Watched - Now comes first */}
+          {recentlyWatched.length > 0 && (
             <MovieCarousel
-              title="Recently Added Anime"
-              movies={featuredAndTrendingAnime}
-              rowIndex={1}
+              title="Recently Watched"
+              movies={recentlyWatched}
+              rowIndex={0}
               onMovieSelect={handleMovieSelect}
               watchlist={watchlist}
               onToggleWatchlist={handleToggleWatchlist}
             />
           )}
 
-          {/* Recently Watched - Only show if user has watched movies */}
-          {recentlyWatched.length > 0 && (
+          {/* Recently Added Movies */}
+          <MovieCarousel
+            title="Recently Added"
+            movies={recentMovies}
+            rowIndex={recentlyWatched.length > 0 ? 1 : 0}
+            onMovieSelect={handleMovieSelect}
+            watchlist={watchlist}
+            onToggleWatchlist={handleToggleWatchlist}
+          />
+
+          {/* Recently Added Anime */}
+          {featuredAndTrendingAnime.length > 0 && (
             <MovieCarousel
-              title="Recently Watched"
-              movies={recentlyWatched}
-              rowIndex={featuredAndTrendingAnime.length > 0 ? 2 : 1}
+              title="Recently Added Anime"
+              movies={featuredAndTrendingAnime}
+              rowIndex={recentlyWatched.length > 0 ? 2 : 1}
               onMovieSelect={handleMovieSelect}
               watchlist={watchlist}
               onToggleWatchlist={handleToggleWatchlist}
@@ -430,7 +431,7 @@ const Index = () => {
             <MovieCarousel
               title="Trending Now"
               movies={trendingMovies}
-              rowIndex={featuredAndTrendingAnime.length > 0 ? 3 : 2}
+              rowIndex={recentlyWatched.length > 0 ? 3 : 2}
               onMovieSelect={handleMovieSelect}
               watchlist={watchlist}
               onToggleWatchlist={handleToggleWatchlist}
@@ -442,7 +443,7 @@ const Index = () => {
             <MovieCarousel
               title="Anime Collection"
               movies={animeMovies}
-              rowIndex={featuredAndTrendingAnime.length > 0 ? 4 : 3}
+              rowIndex={recentlyWatched.length > 0 ? 4 : 3}
               onMovieSelect={handleMovieSelect}
               watchlist={watchlist}
               onToggleWatchlist={handleToggleWatchlist}
@@ -454,7 +455,7 @@ const Index = () => {
             <MovieCarousel
               title="Action Movies"
               movies={actionMovies}
-              rowIndex={featuredAndTrendingAnime.length > 0 ? 5 : 4}
+              rowIndex={recentlyWatched.length > 0 ? 5 : 4}
               onMovieSelect={handleMovieSelect}
               watchlist={watchlist}
               onToggleWatchlist={handleToggleWatchlist}
@@ -466,7 +467,7 @@ const Index = () => {
             <MovieCarousel
               title="Sci-Fi Collection"
               movies={sciFiMovies}
-              rowIndex={featuredAndTrendingAnime.length > 0 ? 6 : 5}
+              rowIndex={recentlyWatched.length > 0 ? 6 : 5}
               onMovieSelect={handleMovieSelect}
               watchlist={watchlist}
               onToggleWatchlist={handleToggleWatchlist}
@@ -478,7 +479,7 @@ const Index = () => {
             <MovieCarousel
               title="Top Rated"
               movies={topRatedMovies}
-              rowIndex={featuredAndTrendingAnime.length > 0 ? 7 : 6}
+              rowIndex={recentlyWatched.length > 0 ? 7 : 6}
               onMovieSelect={handleMovieSelect}
               watchlist={watchlist}
               onToggleWatchlist={handleToggleWatchlist}
@@ -490,7 +491,7 @@ const Index = () => {
             <MovieCarousel
               title="All Movies"
               movies={movies}
-              rowIndex={featuredAndTrendingAnime.length > 0 ? 3 : 2}
+              rowIndex={recentlyWatched.length > 0 ? 3 : 2}
               onMovieSelect={handleMovieSelect}
               watchlist={watchlist}
               onToggleWatchlist={handleToggleWatchlist}
