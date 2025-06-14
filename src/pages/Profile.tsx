@@ -6,9 +6,12 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
-import { Save, Link as LinkIcon, Upload, X } from 'lucide-react';
+import { Save, Link as LinkIcon, Upload, X, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { uploadProfileImage, validateImageFile } from '../utils/fileUpload';
+import { deleteUser } from 'firebase/auth';
+import { doc, deleteDoc } from 'firebase/firestore';
+import { auth, db } from '../config/firebase';
 
 const Profile = () => {
   const { currentUser, userData, logout, updateUserProfile } = useAuth();
@@ -22,6 +25,7 @@ const Profile = () => {
   const [previewUrl, setPreviewUrl] = useState<string>('');
   const [uploadMethod, setUploadMethod] = useState<'url' | 'file'>('url');
   const [loading, setLoading] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
 
@@ -32,6 +36,43 @@ const Profile = () => {
   const handleLogout = async () => {
     await logout();
     navigate('/');
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!currentUser) return;
+
+    const confirmMessage = `Are you sure you want to delete your account? This action cannot be undone and will permanently delete all your data including:
+    
+- Your profile information
+- Your watchlist
+- All account settings
+
+Type "DELETE" to confirm:`;
+
+    const confirmation = prompt(confirmMessage);
+    
+    if (confirmation !== 'DELETE') {
+      return;
+    }
+
+    setDeleteLoading(true);
+    setError('');
+
+    try {
+      // Delete user document from Firestore
+      await deleteDoc(doc(db, 'users', currentUser.uid));
+      
+      // Delete the user account from Firebase Auth
+      await deleteUser(currentUser);
+      
+      // Navigate to home page
+      navigate('/');
+    } catch (error: any) {
+      console.error('Error deleting account:', error);
+      setError('Failed to delete account. Please try again or contact support.');
+    } finally {
+      setDeleteLoading(false);
+    }
   };
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -260,6 +301,29 @@ const Profile = () => {
                 <>
                   <Save size={20} />
                   Save Changes
+                </>
+              )}
+            </Button>
+          </div>
+
+          {/* Delete Account Section */}
+          <div className="border-t border-gray-700 pt-6">
+            <h3 className="text-lg font-semibold text-red-400 mb-3">Danger Zone</h3>
+            <p className="text-sm text-gray-400 mb-4">
+              Once you delete your account, there is no going back. Please be certain.
+            </p>
+            <Button
+              onClick={handleDeleteAccount}
+              disabled={deleteLoading}
+              variant="destructive"
+              className="bg-red-600 hover:bg-red-700 flex items-center gap-2"
+            >
+              {deleteLoading ? (
+                'Deleting Account...'
+              ) : (
+                <>
+                  <Trash2 size={16} />
+                  Delete My Account
                 </>
               )}
             </Button>
