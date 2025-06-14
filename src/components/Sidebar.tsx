@@ -64,26 +64,26 @@ export const Sidebar: React.FC<SidebarProps> = ({ onLogout, isLoggedIn, onLogin 
       {/* Mobile Toggle Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed top-4 left-4 z-50 w-10 h-10 bg-black/80 backdrop-blur-sm rounded-lg flex items-center justify-center text-white hover:bg-black/90 transition-colors"
+        className="fixed top-3 left-3 sm:top-4 sm:left-4 z-50 w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 bg-black/80 backdrop-blur-sm rounded-lg flex items-center justify-center text-white hover:bg-black/90 transition-colors"
         aria-label="Toggle Sidebar"
       >
-        {isOpen ? <X size={20} /> : <Menu size={20} />}
+        {isOpen ? <X size={16} className="sm:w-5 sm:h-5 lg:w-6 lg:h-6" /> : <Menu size={16} className="sm:w-5 sm:h-5 lg:w-6 lg:h-6" />}
       </button>
 
       {/* Sidebar */}
       <div className={`
-        fixed left-0 top-0 h-full w-64 bg-black/95 backdrop-blur-sm border-r border-gray-800 z-40
+        fixed left-0 top-0 h-full w-56 sm:w-64 lg:w-72 xl:w-80 bg-black/95 backdrop-blur-sm border-r border-gray-800 z-40
         transform transition-transform duration-300 ease-in-out
         ${isOpen ? 'translate-x-0' : '-translate-x-full'}
       `}>
         {/* Logo */}
-        <div className="p-6 border-b border-gray-800">
-          <h1 className="text-2xl font-bold text-red-600">Hem's Flix</h1>
+        <div className="p-4 sm:p-6 lg:p-8 border-b border-gray-800">
+          <h1 className="text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold text-red-600">Hem's Flix</h1>
         </div>
 
         {/* Navigation Menu */}
-        <nav className="p-4">
-          <ul className="space-y-2">
+        <nav className="p-3 sm:p-4 lg:p-6">
+          <ul className="space-y-2 lg:space-y-3">
             {menuItems.map((item, index) => {
               const Icon = item.icon;
               const isActive = location.pathname === item.path;
@@ -97,13 +97,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ onLogout, isLoggedIn, onLogin 
                       setIsOpen(false);
                     }}
                     className={`
-                      w-full flex flex-col items-center gap-1 px-4 py-3 rounded-lg transition-colors text-center
+                      w-full flex flex-col items-center gap-1 sm:gap-2 px-3 sm:px-4 lg:px-6 py-3 sm:py-4 lg:py-5 rounded-lg transition-colors text-center
                       ${isActive ? 'bg-red-600 text-white' : 'text-gray-300 hover:bg-gray-800 hover:text-white'}
                       ${isFocused ? 'ring-2 ring-red-500 bg-gray-800' : ''}
                     `}
                   >
-                    <Icon size={20} />
-                    <span className="text-xs font-medium">{item.label}</span>
+                    <Icon size={18} className="sm:w-5 sm:h-5 lg:w-6 lg:h-6 xl:w-7 xl:h-7" />
+                    <span className="text-xs sm:text-sm lg:text-base font-medium">{item.label}</span>
                   </button>
                 </li>
               );
@@ -112,15 +112,15 @@ export const Sidebar: React.FC<SidebarProps> = ({ onLogout, isLoggedIn, onLogin 
         </nav>
 
         {/* User Section */}
-        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-800">
+        <div className="absolute bottom-0 left-0 right-0 p-3 sm:p-4 lg:p-6 border-t border-gray-800">
           {isLoggedIn ? (
-            <div className="space-y-3">
-              <div className="flex items-center gap-3 px-4 py-2 bg-gray-800 rounded-lg">
-                <div className="w-8 h-8 bg-red-600 rounded-full flex items-center justify-center">
-                  <User size={16} className="text-white" />
+            <div className="space-y-3 lg:space-y-4">
+              <div className="flex items-center gap-3 lg:gap-4 px-3 sm:px-4 py-2 sm:py-3 bg-gray-800 rounded-lg">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 bg-red-600 rounded-full flex items-center justify-center">
+                  <User size={14} className="sm:w-4 sm:h-4 lg:w-5 lg:h-5 text-white" />
                 </div>
                 <div className="flex-1 truncate">
-                  <p className="text-white text-sm font-medium truncate">
+                  <p className="text-white text-xs sm:text-sm lg:text-base font-medium truncate">
                     {userData?.name || 'User'}
                   </p>
                   {userData?.isAdmin && (
@@ -134,9 +134,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ onLogout, isLoggedIn, onLogin 
                   setIsOpen(false);
                 }}
                 variant="outline"
-                className="w-full border-gray-600 text-white hover:bg-gray-800"
+                className="w-full border-gray-600 text-white hover:bg-gray-800 text-xs sm:text-sm lg:text-base py-2 sm:py-3"
               >
-                <LogOut size={16} className="mr-2" />
+                <LogOut size={14} className="sm:w-4 sm:h-4 lg:w-5 lg:h-5 mr-2" />
                 Sign Out
               </Button>
             </div>
@@ -146,7 +146,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onLogout, isLoggedIn, onLogin 
                 onLogin();
                 setIsOpen(false);
               }}
-              className="w-full bg-red-600 hover:bg-red-700"
+              className="w-full bg-red-600 hover:bg-red-700 text-xs sm:text-sm lg:text-base py-2 sm:py-3"
             >
               Sign In
             </Button>
