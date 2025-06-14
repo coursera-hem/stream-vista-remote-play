@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, Maximize, ArrowLeft } from 'lucide-react';
 
@@ -10,6 +9,7 @@ interface Movie {
   genre: string;
   rating: number;
   duration: string;
+  videoUrl?: string;
 }
 
 interface VideoPlayerProps {
@@ -26,8 +26,8 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ movie, onBack }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const controlsTimeoutRef = useRef<NodeJS.Timeout>();
 
-  // Sample video URL (you would replace this with actual video URLs)
-  const videoSrc = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4";
+  // Use the movie's actual video URL, fallback to sample video if none provided
+  const videoSrc = movie.videoUrl || "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4";
 
   useEffect(() => {
     const video = videoRef.current;
