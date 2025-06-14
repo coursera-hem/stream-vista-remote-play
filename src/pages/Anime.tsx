@@ -7,6 +7,7 @@ import { SearchModal } from '../components/SearchModal';
 import { LoginModal } from '../components/LoginModal';
 import { AnimeCard } from '../components/AnimeCard';
 import { AnimeEpisodeModal } from '../components/AnimeEpisodeModal';
+import { VideoPlayer } from '../components/VideoPlayer';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { Episode } from '../types/Episode';
@@ -32,7 +33,9 @@ const Anime = () => {
   const [showSearchModal, setShowSearchModal] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showEpisodeModal, setShowEpisodeModal] = useState(false);
+  const [showVideoPlayer, setShowVideoPlayer] = useState(false);
   const [selectedAnime, setSelectedAnime] = useState<FirebaseAnime | null>(null);
+  const [selectedEpisode, setSelectedEpisode] = useState<Episode | null>(null);
   const [animes, setAnimes] = useState<FirebaseAnime[]>([]);
   const [loading, setLoading] = useState(true);
   const { currentUser, logout } = useAuth();
@@ -83,13 +86,30 @@ const Anime = () => {
   const handleEpisodePlay = (episode: Episode) => {
     console.log(`Playing episode ${episode.episodeNumber}: ${episode.title}`);
     console.log('Episode video URL:', episode.videoUrl);
-    // Here you can implement the logic to play the specific episode
-    // For example, redirect to a video player with the episode URL
-    setShowEpisodeModal(false);
     
-    // Example: Open video in new tab
-    window.open(episode.videoUrl, '_blank');
+    // Create a movie-like object for the VideoPlayer component
+    setSelectedEpisode(episode);
+    setShowEpisodeModal(false);
+    setShowVideoPlayer(true);
   };
+
+  const handleVideoPlayerBack = () => {
+    setShowVideoPlayer(false);
+    setSelectedEpisode(null);
+    setShowEpisodeModal(true);
+  };
+
+  // Convert Episode to Movie format for VideoPlayer
+  const episodeAsMovie = selectedEpisode && selectedAnime ? {
+    id: selectedEpisode.id,
+    title: `${selectedAnime.title} - Episode ${selectedEpisode.episodeNumber}: ${selectedEpisode.title}`,
+    poster: selectedAnime.poster,
+    year: selectedAnime.releaseYear,
+    genre: selectedAnime.genre,
+    rating: selectedAnime.rating,
+    duration: selectedEpisode.duration || '24min',
+    videoUrl: selectedEpisode.videoUrl
+  } : null;
 
   if (loading) {
     return (
@@ -108,6 +128,16 @@ const Anime = () => {
           </div>
         </main>
       </div>
+    );
+  }
+
+  // Show video player when an episode is selected
+  if (showVideoPlayer && episodeAsMovie) {
+    return (
+      <VideoPlayer
+        movie={episodeAsMovie}
+        onBack={handleVideoPlayerBack}
+      />
     );
   }
 
