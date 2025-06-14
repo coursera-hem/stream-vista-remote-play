@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Search, Menu, User, Home, Film, Bookmark, LogOut, UserCog, Tv } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { useFocus } from './FocusProvider';
 
 interface NavigationProps {
   onSearch: () => void;
@@ -22,6 +23,7 @@ export const Navigation: React.FC<NavigationProps> = ({
   const [showUserMenu, setShowUserMenu] = useState(false);
   const { userData } = useAuth();
   const navigate = useNavigate();
+  const { focusedElement } = useFocus();
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-40 bg-black/90 backdrop-blur-sm border-b border-gray-800">
@@ -29,8 +31,12 @@ export const Navigation: React.FC<NavigationProps> = ({
         {/* Logo */}
         <div className="flex items-center gap-8">
           <h1 
-            className="text-2xl font-bold text-red-600 cursor-pointer"
+            id="nav-logo-0"
+            className={`text-2xl font-bold text-red-600 cursor-pointer ${
+              focusedElement === 'nav-logo-0' ? 'ring-2 ring-red-500 rounded' : ''
+            }`}
             onClick={() => navigate('/')}
+            tabIndex={0}
           >
             StreamFlix
           </h1>
@@ -38,37 +44,52 @@ export const Navigation: React.FC<NavigationProps> = ({
           {/* Navigation links */}
           <div className="hidden md:flex items-center gap-6">
             <button 
+              id="nav-home-0"
               onClick={() => navigate('/')}
-              className="text-white hover:text-gray-300 transition-colors flex items-center gap-2"
+              className={`text-white hover:text-gray-300 transition-colors flex items-center gap-2 ${
+                focusedElement === 'nav-home-0' ? 'ring-2 ring-white rounded px-2 py-1' : ''
+              }`}
             >
               <Home className="w-4 h-4" />
               Home
             </button>
             <button 
+              id="nav-movies-0"
               onClick={() => navigate('/movies')}
-              className="text-white hover:text-gray-300 transition-colors flex items-center gap-2"
+              className={`text-white hover:text-gray-300 transition-colors flex items-center gap-2 ${
+                focusedElement === 'nav-movies-0' ? 'ring-2 ring-white rounded px-2 py-1' : ''
+              }`}
             >
               <Film className="w-4 h-4" />
               Movies
             </button>
             <button 
+              id="nav-anime-0"
               onClick={() => navigate('/anime')}
-              className="text-white hover:text-gray-300 transition-colors flex items-center gap-2"
+              className={`text-white hover:text-gray-300 transition-colors flex items-center gap-2 ${
+                focusedElement === 'nav-anime-0' ? 'ring-2 ring-white rounded px-2 py-1' : ''
+              }`}
             >
               <Tv className="w-4 h-4" />
               Anime
             </button>
             <button 
+              id="nav-mylist-0"
               onClick={() => navigate('/mylist')}
-              className="text-white hover:text-gray-300 transition-colors flex items-center gap-2"
+              className={`text-white hover:text-gray-300 transition-colors flex items-center gap-2 ${
+                focusedElement === 'nav-mylist-0' ? 'ring-2 ring-white rounded px-2 py-1' : ''
+              }`}
             >
               <Bookmark className="w-4 h-4" />
               My List
             </button>
             {userData?.isAdmin && (
               <button 
+                id="nav-admin-0"
                 onClick={() => navigate('/admin')}
-                className="text-white hover:text-gray-300 transition-colors flex items-center gap-2"
+                className={`text-white hover:text-gray-300 transition-colors flex items-center gap-2 ${
+                  focusedElement === 'nav-admin-0' ? 'ring-2 ring-white rounded px-2 py-1' : ''
+                }`}
               >
                 <UserCog className="w-4 h-4" />
                 Admin Panel
@@ -81,8 +102,11 @@ export const Navigation: React.FC<NavigationProps> = ({
         <div className="flex items-center gap-4">
           {/* Search button */}
           <button
+            id="nav-search-0"
             onClick={onSearch}
-            className="w-10 h-10 bg-gray-800 hover:bg-gray-700 rounded-full flex items-center justify-center transition-colors"
+            className={`w-10 h-10 bg-gray-800 hover:bg-gray-700 rounded-full flex items-center justify-center transition-colors ${
+              focusedElement === 'nav-search-0' ? 'ring-2 ring-white' : ''
+            }`}
           >
             <Search className="w-5 h-5 text-white" />
           </button>
@@ -91,8 +115,11 @@ export const Navigation: React.FC<NavigationProps> = ({
           {isLoggedIn ? (
             <div className="relative">
               <button
+                id="nav-user-0"
                 onClick={() => setShowUserMenu(!showUserMenu)}
-                className="w-10 h-10 bg-red-600 hover:bg-red-700 rounded-full flex items-center justify-center transition-colors"
+                className={`w-10 h-10 bg-red-600 hover:bg-red-700 rounded-full flex items-center justify-center transition-colors ${
+                  focusedElement === 'nav-user-0' ? 'ring-2 ring-white' : ''
+                }`}
               >
                 <User className="w-5 h-5 text-white" />
               </button>
@@ -132,15 +159,23 @@ export const Navigation: React.FC<NavigationProps> = ({
             </div>
           ) : (
             <button
+              id="nav-signin-0"
               onClick={onLogin}
-              className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg font-semibold transition-colors"
+              className={`bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg font-semibold transition-colors ${
+                focusedElement === 'nav-signin-0' ? 'ring-2 ring-white' : ''
+              }`}
             >
               Sign In
             </button>
           )}
 
           {/* Mobile menu */}
-          <button className="md:hidden w-10 h-10 bg-gray-800 hover:bg-gray-700 rounded-full flex items-center justify-center transition-colors">
+          <button 
+            id="nav-menu-0"
+            className={`md:hidden w-10 h-10 bg-gray-800 hover:bg-gray-700 rounded-full flex items-center justify-center transition-colors ${
+              focusedElement === 'nav-menu-0' ? 'ring-2 ring-white' : ''
+            }`}
+          >
             <Menu className="w-5 h-5 text-white" />
           </button>
         </div>

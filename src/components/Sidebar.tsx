@@ -1,8 +1,10 @@
+
 import React, { useState } from 'react';
 import { Home, Film, Bookmark, UserCog, LogOut, User, Menu, X, Tv } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from './ui/button';
+import { useFocus } from './FocusProvider';
 
 interface SidebarProps {
   onLogout: () => void;
@@ -16,6 +18,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onLogout, isLoggedIn, onLogin 
   const { userData } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const { focusedElement } = useFocus();
 
   const menuItems = [
     { icon: Home, label: 'Home', path: '/', id: 'home' },
@@ -61,8 +64,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ onLogout, isLoggedIn, onLogin 
     <>
       {/* Mobile Toggle Button */}
       <button
+        id="sidebar-toggle-0"
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed top-4 left-4 z-50 w-10 h-10 bg-black/80 backdrop-blur-sm rounded-lg flex items-center justify-center text-white hover:bg-black/90 transition-colors"
+        className={`fixed top-4 left-4 z-50 w-10 h-10 bg-black/80 backdrop-blur-sm rounded-lg flex items-center justify-center text-white hover:bg-black/90 transition-colors ${
+          focusedElement === 'sidebar-toggle-0' ? 'ring-2 ring-white' : ''
+        }`}
         aria-label="Toggle Sidebar"
       >
         {isOpen ? <X size={20} /> : <Menu size={20} />}
@@ -90,6 +96,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onLogout, isLoggedIn, onLogin 
               return (
                 <li key={item.id}>
                   <button
+                    id={`sidebar-${item.id}-0`}
                     onClick={() => {
                       navigate(item.path);
                       setIsOpen(false);
@@ -97,7 +104,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onLogout, isLoggedIn, onLogin 
                     className={`
                       w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-left
                       ${isActive ? 'bg-red-600 text-white' : 'text-gray-300 hover:bg-gray-800 hover:text-white'}
-                      ${isFocused ? 'ring-2 ring-red-500 bg-gray-800' : ''}
+                      ${isFocused || focusedElement === `sidebar-${item.id}-0` ? 'ring-2 ring-red-500 bg-gray-800' : ''}
                     `}
                   >
                     <Icon size={20} />
@@ -127,12 +134,15 @@ export const Sidebar: React.FC<SidebarProps> = ({ onLogout, isLoggedIn, onLogin 
                 </div>
               </div>
               <Button
+                id="sidebar-signout-0"
                 onClick={() => {
                   onLogout();
                   setIsOpen(false);
                 }}
                 variant="outline"
-                className="w-full border-gray-600 text-white hover:bg-gray-800"
+                className={`w-full border-gray-600 text-white hover:bg-gray-800 ${
+                  focusedElement === 'sidebar-signout-0' ? 'ring-2 ring-white' : ''
+                }`}
               >
                 <LogOut size={16} className="mr-2" />
                 Sign Out
@@ -140,11 +150,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ onLogout, isLoggedIn, onLogin 
             </div>
           ) : (
             <Button
+              id="sidebar-signin-0"
               onClick={() => {
                 onLogin();
                 setIsOpen(false);
               }}
-              className="w-full bg-red-600 hover:bg-red-700"
+              className={`w-full bg-red-600 hover:bg-red-700 ${
+                focusedElement === 'sidebar-signin-0' ? 'ring-2 ring-white' : ''
+              }`}
             >
               Sign In
             </Button>
