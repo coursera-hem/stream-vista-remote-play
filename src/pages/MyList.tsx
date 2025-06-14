@@ -1,16 +1,17 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { Sidebar } from '../components/Sidebar';
 import { MovieDetailModal } from '../components/MovieDetailModal';
 import { SearchModal } from '../components/SearchModal';
 import { VideoPlayer } from '../components/VideoPlayer';
-import { mockMovies, Movie } from '../data/mockMovies';
+import { Movie } from '../types/Movie';
 import { addToRecentlyWatched } from '../services/recentlyWatched';
 import { addToWatchlist, removeFromWatchlist, subscribeToWatchlist } from '../services/watchlistService';
 import { KeyboardNavigationProvider, useKeyboardNavigation } from '../components/KeyboardNavigation';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '../hooks/use-toast';
+import { collection, getDocs, doc, getDoc } from 'firebase/firestore';
+import { db } from '../config/firebase';
 
 const MyListContent = () => {
   const [showSearch, setShowSearch] = useState(false);
@@ -18,7 +19,9 @@ const MyListContent = () => {
   const [showMovieDetail, setShowMovieDetail] = useState(false);
   const [showVideoPlayer, setShowVideoPlayer] = useState(false);
   const [watchlist, setWatchlist] = useState<string[]>([]);
+  const [watchlistMovies, setWatchlistMovies] = useState<Movie[]>([]);
   const [loading, setLoading] = useState(true);
+  const [allMovies, setAllMovies] = useState<Movie[]>([]);
 
   const { currentUser, userData, logout } = useAuth();
   const { focusedElement } = useKeyboardNavigation();
@@ -30,6 +33,51 @@ const MyListContent = () => {
       navigate('/signin');
       return;
     }
+    
+    // Fetch all movies first
+    const fetchAllMovies = async () => {
+      try {
+        const moviesCollection = collection(db, 'movies');
+        const movieSnapshot = await getDocs(moviesCollection);
+        
+        if (movieSnapshot.empty) {
+          setAllMovies([]);
+          return;
+        }
+
+        const movieList: Movie[] = [];
+        
+        movieSnapshot.docs.forEach((doc) => {
+          const data = doc.data();
+          
+          const movie: Movie = {
+            id: doc.id,
+            title: data.title || 'Untitled',
+            poster: data.poster || '/placeholder.svg',
+            backdrop: data.backdrop || data.poster || '/placeholder.svg',
+            year: data.releaseYear || data.year || new Date().getFullYear(),
+            genre: data.genre || 'Unknown',
+            rating: data.rating || 0,
+            duration: data.duration || 'Unknown',
+            description: data.description || 'No description available',
+            videoUrl: data.videoUrl || data.driveLink || '',
+            releaseYear: data.releaseYear,
+            language: data.language,
+            isTrending: data.isTrending || false,
+            isFeatured: data.isFeatured || false,
+            views: data.views || 0
+          };
+          
+          movieList.push(movie);
+        });
+        
+        setAllMovies(movieList);
+      } catch (error) {
+        console.error('Error fetching all movies:', error);
+      }
+    };
+    
+    fetchAllMovies();
     
     console.log('Setting up watchlist subscription for user:', currentUser.uid);
     const unsubscribe = subscribeToWatchlist(currentUser.uid, (movieIds) => {
@@ -43,15 +91,16 @@ const MyListContent = () => {
       unsubscribe();
     };
   }, [currentUser, navigate]);
-
-  const watchlistMovies = mockMovies.filter(movie => {
-    const isInList = watchlist.includes(movie.id);
-    console.log(`Movie ${movie.title} (${movie.id}) in watchlist:`, isInList);
-    return isInList;
-  });
-
-  console.log('Watchlist IDs:', watchlist);
-  console.log('Watchlist Movies:', watchlistMovies.map(m => ({ id: m.id, title: m.title })));
+  
+  // Update watchlist movies whenever allMovies or watchlist changes
+  useEffect(() => {
+    if (allMovies.length > 0 && watchlist.length > 0) {
+      const filteredMovies = allMovies.filter(movie => watchlist.includes(movie.id));
+      setWatchlistMovies(filteredMovies);
+    } else {
+      setWatchlistMovies([]);
+    }
+  }, [allMovies, watchlist]);
 
   const handleMovieSelect = (movie: Movie) => {
     setSelectedMovie(movie);
@@ -189,7 +238,7 @@ const MyListContent = () => {
         isOpen={showSearch}
         onClose={() => setShowSearch(false)}
         onMovieSelect={handleMovieSelect}
-        movies={mockMovies}
+        movies={allMovies}
       />
 
       <MovieDetailModal

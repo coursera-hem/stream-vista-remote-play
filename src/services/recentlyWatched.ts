@@ -1,5 +1,5 @@
 
-import { Movie } from '../data/mockMovies';
+import { Movie } from '../types/Movie';
 
 const RECENTLY_WATCHED_KEY = 'recentlyWatched';
 const MAX_RECENT_MOVIES = 10;
