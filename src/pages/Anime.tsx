@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../config/firebase';
@@ -10,6 +9,7 @@ import { AnimeEpisodeModal } from '../components/AnimeEpisodeModal';
 import { VideoPlayer } from '../components/VideoPlayer';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { useToast } from '../hooks/use-toast';
 import { Episode } from '../types/Episode';
 
 interface FirebaseAnime {
@@ -40,6 +40,7 @@ const Anime = () => {
   const [loading, setLoading] = useState(true);
   const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   useEffect(() => {
     fetchAnimes();
@@ -48,21 +49,76 @@ const Anime = () => {
   const fetchAnimes = async () => {
     try {
       console.log('Fetching animes from Firebase...');
-      const animesCollection = collection(db, 'animes');
-      const animeSnapshot = await getDocs(animesCollection);
-      const animeList = animeSnapshot.docs.map(doc => {
-        const data = doc.data();
-        console.log('Anime data:', { id: doc.id, ...data });
-        return {
-          id: doc.id,
-          ...data
-        };
-      }) as FirebaseAnime[];
+      console.log('Firebase DB instance:', db);
       
+      const animesCollection = collection(db, 'animes');
+      console.log('Animes collection reference:', animesCollection);
+      
+      console.log('Attempting to get all documents from animes collection...');
+      const animeSnapshot = await getDocs(animesCollection);
+      console.log('Anime snapshot received:', animeSnapshot);
+      console.log('Number of docs in snapshot:', animeSnapshot.size);
+      console.log('Snapshot empty?', animeSnapshot.empty);
+      
+      if (animeSnapshot.empty) {
+        console.log('No documents found in animes collection');
+        toast({
+          title: "No Anime Found",
+          description: "No anime found in the database. Please upload some anime from the admin dashboard.",
+        });
+        setAnimes([]);
+        setLoading(false);
+        return;
+      }
+
+      const animeList: FirebaseAnime[] = [];
+      
+      animeSnapshot.docs.forEach((doc, index) => {
+        const data = doc.data();
+        console.log(`Anime ${index + 1} - Doc ID: ${doc.id}`, data);
+        
+        const anime: FirebaseAnime = {
+          id: doc.id,
+          title: data.title || 'Untitled',
+          description: data.description || 'No description available',
+          genre: data.genre || 'Unknown',
+          releaseYear: data.releaseYear || new Date().getFullYear(),
+          episodes: data.episodes || 0,
+          status: data.status || 'Unknown',
+          poster: data.poster || '/placeholder.svg',
+          videoUrl: data.videoUrl || '',
+          rating: data.rating || 0,
+          language: data.language || 'Unknown',
+          isTrending: data.isTrending || false,
+          isFeatured: data.isFeatured || false,
+          views: data.views || 0
+        };
+        
+        console.log(`Transformed anime ${index + 1}:`, anime);
+        animeList.push(anime);
+      });
+      
+      console.log('Final anime list:', animeList);
       console.log('Total animes fetched:', animeList.length);
       setAnimes(animeList);
+
+      toast({
+        title: "Anime Loaded",
+        description: `Successfully loaded ${animeList.length} anime from database.`,
+      });
+      
     } catch (error) {
       console.error('Error fetching animes:', error);
+      console.error('Error details:', {
+        name: error.name,
+        message: error.message,
+        stack: error.stack
+      });
+      toast({
+        title: "Error Loading Anime",
+        description: `Failed to load anime: ${error.message}`,
+        variant: "destructive"
+      });
     } finally {
       setLoading(false);
     }
@@ -151,7 +207,24 @@ const Anime = () => {
 
       <main className="pt-16 px-6 py-8">
         <div className="max-w-7xl mx-auto">
-          <h1 className="text-4xl font-bold mb-8">Anime Collection</h1>
+          <div className="flex items-center justify-between mb-8">
+            <h1 className="text-4xl font-bold">Anime Collection</h1>
+            <button
+              onClick={fetchAnimes}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
+            >
+              Refresh
+            </button>
+          </div>
+          
+          <div className="mb-4 p-4 bg-gray-800 rounded-lg">
+            <h4 className="text-white font-medium mb-2">Debug Information:</h4>
+            <div className="text-sm text-gray-400">
+              <p>Total Anime Count: {animes.length}</p>
+              <p>Loading: {loading ? 'Yes' : 'No'}</p>
+              <p>Collection: animes</p>
+            </div>
+          </div>
           
           {animes.length === 0 ? (
             <div className="text-center py-20">
@@ -160,6 +233,12 @@ const Anime = () => {
                 <p className="text-gray-400 mb-6">
                   There are no anime uploaded yet. Check back later for new content!
                 </p>
+                <button
+                  onClick={fetchAnimes}
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold"
+                >
+                  Refresh Collection
+                </button>
               </div>
             </div>
           ) : (

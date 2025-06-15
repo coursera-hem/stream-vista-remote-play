@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { collection, getDocs, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { Button } from './ui/button';
-import { Trash2, ArrowLeft, Plus, Settings, Edit } from 'lucide-react';
+import { Trash2, ArrowLeft, Plus, Settings, Edit, RefreshCw } from 'lucide-react';
 import { useToast } from '../hooks/use-toast';
 import { AnimeUploadForm } from './AnimeUploadForm';
 import { AnimeEditForm } from './AnimeEditForm';
@@ -39,29 +39,69 @@ export const AnimeManager: React.FC<AnimeManagerProps> = ({ onBack, onManageEpis
 
   const fetchAnimes = async () => {
     try {
-      console.log('Fetching animes from Firebase...');
+      console.log('AnimeManager: Fetching animes from Firebase...');
+      console.log('AnimeManager: Firebase DB instance:', db);
+      
       const animesCollection = collection(db, 'animes');
+      console.log('AnimeManager: Animes collection reference:', animesCollection);
+      
+      console.log('AnimeManager: Attempting to get all documents from animes collection...');
       const animeSnapshot = await getDocs(animesCollection);
-      const animeList = animeSnapshot.docs.map(doc => {
-        const data = doc.data();
-        console.log('Anime data:', { id: doc.id, ...data });
-        return {
-          id: doc.id,
-          ...data
-        };
-      }) as FirebaseAnime[];
+      console.log('AnimeManager: Anime snapshot received:', animeSnapshot);
+      console.log('AnimeManager: Number of docs in snapshot:', animeSnapshot.size);
+      console.log('AnimeManager: Snapshot empty?', animeSnapshot.empty);
       
-      console.log('Total animes fetched:', animeList.length);
-      setAnimes(animeList);
-      
-      if (animeList.length === 0) {
+      if (animeSnapshot.empty) {
+        console.log('AnimeManager: No documents found in animes collection');
         toast({
           title: "Info",
           description: "No animes found in the database. Upload some animes first.",
         });
+        setAnimes([]);
+        setLoading(false);
+        return;
+      }
+
+      const animeList: FirebaseAnime[] = [];
+      
+      animeSnapshot.docs.forEach((doc, index) => {
+        const data = doc.data();
+        console.log(`AnimeManager: Anime ${index + 1} - Doc ID: ${doc.id}`, data);
+        
+        const anime: FirebaseAnime = {
+          id: doc.id,
+          title: data.title || 'Untitled',
+          description: data.description || 'No description available',
+          genre: data.genre || 'Unknown',
+          releaseYear: data.releaseYear || new Date().getFullYear(),
+          episodes: data.episodes || 0,
+          status: data.status || 'Unknown',
+          poster: data.poster || '/placeholder.svg',
+          videoUrl: data.videoUrl || '',
+          uploadedAt: data.uploadedAt || new Date()
+        };
+        
+        console.log(`AnimeManager: Transformed anime ${index + 1}:`, anime);
+        animeList.push(anime);
+      });
+      
+      console.log('AnimeManager: Final anime list:', animeList);
+      console.log('AnimeManager: Total animes fetched:', animeList.length);
+      setAnimes(animeList);
+      
+      if (animeList.length > 0) {
+        toast({
+          title: "Success",
+          description: `Successfully loaded ${animeList.length} anime from database.`,
+        });
       }
     } catch (error) {
-      console.error('Error fetching animes:', error);
+      console.error('AnimeManager: Error fetching animes:', error);
+      console.error('AnimeManager: Error details:', {
+        name: error.name,
+        message: error.message,
+        stack: error.stack
+      });
       toast({
         title: "Error",
         description: "Failed to fetch animes from database",
@@ -194,6 +234,15 @@ export const AnimeManager: React.FC<AnimeManagerProps> = ({ onBack, onManageEpis
         </div>
         <div className="flex items-center gap-4">
           <Button
+            onClick={fetchAnimes}
+            variant="outline"
+            size="sm"
+            className="border-blue-600 text-blue-400 hover:bg-blue-600 hover:text-white"
+          >
+            <RefreshCw size={16} className="mr-2" />
+            Refresh
+          </Button>
+          <Button
             onClick={() => setShowUploadForm(true)}
             className="bg-red-600 hover:bg-red-700 flex items-center gap-2"
             size="sm"
@@ -224,6 +273,16 @@ export const AnimeManager: React.FC<AnimeManagerProps> = ({ onBack, onManageEpis
             <Trash2 size={16} />
             Delete Selected ({selectedAnimes.length})
           </Button>
+        </div>
+      </div>
+
+      <div className="mb-4 p-4 bg-gray-800 rounded-lg">
+        <h4 className="text-white font-medium mb-2">Debug Information:</h4>
+        <div className="text-sm text-gray-400">
+          <p>Total Anime Count: {animes.length}</p>
+          <p>Loading: {loading ? 'Yes' : 'No'}</p>
+          <p>Collection: animes</p>
+          <p>Selected Count: {selectedAnimes.length}</p>
         </div>
       </div>
 
