@@ -24,6 +24,8 @@ export interface AnimeData {
   isTrending: boolean;
   isFeatured: boolean;
   views: number;
+  episodes: number;
+  videoUrl: string;
   uploadedAt: Date;
 }
 

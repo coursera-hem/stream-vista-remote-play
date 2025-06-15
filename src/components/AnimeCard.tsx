@@ -112,7 +112,7 @@ export const AnimeCard: React.FC<AnimeCardProps> = ({
           </div>
           <div className="flex items-center gap-1">
             <Tv size={14} />
-            <span>{episodes} ep</span>
+            <span>{episodes === 0 ? 'No episodes' : `${episodes} ep`}</span>
           </div>
         </div>
         <p className="text-red-500 text-sm mb-2">{genre}</p>

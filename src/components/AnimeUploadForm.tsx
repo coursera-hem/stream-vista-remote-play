@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../config/firebase';
@@ -37,6 +36,7 @@ export const AnimeUploadForm = () => {
     setLoading(true);
 
     try {
+      // Include all fields that the Anime page expects
       const animeData: Omit<AnimeData, 'uploadedAt'> & { uploadedAt: any } = {
         title: formData.title,
         description: formData.description,
@@ -49,6 +49,8 @@ export const AnimeUploadForm = () => {
         isTrending: formData.isTrending,
         isFeatured: formData.isFeatured,
         views: 0,
+        episodes: 0, // Default to 0, will be updated when episodes are added
+        videoUrl: '', // Default empty, will be set to first episode's video URL when episodes are added
         uploadedAt: serverTimestamp()
       };
 
