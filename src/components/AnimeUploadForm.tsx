@@ -214,7 +214,9 @@ export const AnimeUploadForm = () => {
         uploadedAt: serverTimestamp()
       };
 
-      const docRef = await addDoc(collection(db, 'anime'), animeData);
+      console.log('Storing anime data in "animes" collection:', animeData);
+      const docRef = await addDoc(collection(db, 'animes'), animeData);
+      console.log('Anime stored successfully with ID:', docRef.id);
       setCreatedAnimeId(docRef.id);
 
       toast({
