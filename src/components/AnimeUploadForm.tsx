@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../config/firebase';
@@ -36,7 +37,10 @@ export const AnimeUploadForm = () => {
     setLoading(true);
 
     try {
-      // Include all fields that the Anime page expects
+      console.log('Starting anime upload process...');
+      console.log('Firebase DB instance:', db);
+      
+      // Prepare anime data with all required fields
       const animeData: Omit<AnimeData, 'uploadedAt'> & { uploadedAt: any } = {
         title: formData.title,
         description: formData.description,
@@ -54,20 +58,34 @@ export const AnimeUploadForm = () => {
         uploadedAt: serverTimestamp()
       };
 
-      console.log('Storing anime data in "animes" collection:', animeData);
-      const docRef = await addDoc(collection(db, 'animes'), animeData);
-      console.log('Anime stored successfully with ID:', docRef.id);
+      console.log('Prepared anime data:', animeData);
+      
+      // Get the animes collection reference
+      const animesCollection = collection(db, 'animes');
+      console.log('Collection reference for "animes":', animesCollection);
+      console.log('Collection path:', animesCollection.path);
+      
+      // Add document to the animes collection
+      console.log('Adding document to "animes" collection...');
+      const docRef = await addDoc(animesCollection, animeData);
+      console.log('Document added successfully!');
+      console.log('Generated document ID:', docRef.id);
+      console.log('Document reference path:', docRef.path);
+      
       setCreatedAnimeId(docRef.id);
 
       toast({
         title: "Success",
-        description: "Anime details saved successfully! Now you can add episodes."
+        description: `Anime "${formData.title}" saved successfully with ID: ${docRef.id}. Now you can add episodes.`
       });
 
       setCurrentStep('episodes');
 
     } catch (error: any) {
       console.error('Error uploading anime:', error);
+      console.error('Error name:', error.name);
+      console.error('Error message:', error.message);
+      console.error('Error stack:', error.stack);
       toast({
         title: "Error",
         description: error.message || 'Failed to upload anime',
