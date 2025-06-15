@@ -34,6 +34,7 @@ export const AnimeCard: React.FC<AnimeCardProps> = ({
   const [imageError, setImageError] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [isQuickPlaying, setIsQuickPlaying] = useState(false);
+  const [quickPlayError, setQuickPlayError] = useState<string | null>(null);
 
   const handleImageError = () => {
     console.log('Image failed to load for anime:', title);
@@ -48,12 +49,27 @@ export const AnimeCard: React.FC<AnimeCardProps> = ({
 
   const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
-  const handleCardClick = () => {
+  const handleCardClick = async () => {
     if (isMobile && onQuickPlay) {
       // On mobile, try quick play first
       console.log('Mobile device detected, attempting quick play for:', title);
       setIsQuickPlaying(true);
-      onQuickPlay(id);
+      setQuickPlayError(null);
+      
+      try {
+        await onQuickPlay(id);
+        // If we reach here, quick play was successful
+        setIsQuickPlaying(false);
+      } catch (error) {
+        console.error('Quick play failed:', error);
+        setIsQuickPlaying(false);
+        setQuickPlayError('Unable to play this anime. Episodes may not be available yet.');
+        
+        // Clear error after 3 seconds
+        setTimeout(() => {
+          setQuickPlayError(null);
+        }, 3000);
+      }
     } else {
       // On desktop, show episode selection
       if (onEpisodeSelect) {
@@ -80,6 +96,17 @@ export const AnimeCard: React.FC<AnimeCardProps> = ({
           <div className="text-center text-white">
             <div className="w-8 h-8 border-4 border-white border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
             <p className="text-sm">Starting playback...</p>
+          </div>
+        </div>
+      )}
+
+      {/* Quick play error indicator for mobile */}
+      {quickPlayError && (
+        <div className="absolute inset-0 bg-black bg-opacity-75 flex items-center justify-center z-20">
+          <div className="text-center text-white p-4">
+            <div className="text-red-400 mb-2">⚠️</div>
+            <p className="text-sm">{quickPlayError}</p>
+            <p className="text-xs text-gray-400 mt-2">Tap again to try episode list</p>
           </div>
         </div>
       )}
@@ -119,7 +146,7 @@ export const AnimeCard: React.FC<AnimeCardProps> = ({
         </div>
         
         {/* Mobile play indicator */}
-        {isMobile && (
+        {isMobile && !isQuickPlaying && !quickPlayError && (
           <div className="absolute top-2 left-2 bg-red-600 text-white px-2 py-1 rounded text-xs font-semibold">
             Tap to Play
           </div>

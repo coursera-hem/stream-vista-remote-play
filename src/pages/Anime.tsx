@@ -172,7 +172,7 @@ const Anime = () => {
           description: "Anime not found",
           variant: "destructive"
         });
-        return;
+        throw new Error('Anime not found');
       }
 
       // Fetch the first episode directly
@@ -192,11 +192,22 @@ const Anime = () => {
           description: "This anime doesn't have any episodes yet.",
           variant: "destructive"
         });
-        return;
+        throw new Error('No episodes found');
       }
 
       const firstEpisodeDoc = querySnapshot.docs[0];
       const episodeData = firstEpisodeDoc.data();
+      
+      // Check if the episode has a valid video URL
+      if (!episodeData.videoUrl || episodeData.videoUrl.trim() === '') {
+        console.log('Episode found but no video URL:', episodeData);
+        toast({
+          title: "Video Not Available",
+          description: "This episode doesn't have a video file yet. Please try the episode list instead.",
+          variant: "destructive"
+        });
+        throw new Error('Video URL not available');
+      }
       
       const episode: Episode = {
         id: firstEpisodeDoc.id,
@@ -213,7 +224,7 @@ const Anime = () => {
         updatedAt: episodeData.updatedAt ? episodeData.updatedAt.toDate() : new Date()
       };
 
-      console.log('First episode found:', episode);
+      console.log('First episode found with video URL:', episode.videoUrl);
       
       // Set up for video player
       setSelectedAnime(anime);
@@ -222,11 +233,8 @@ const Anime = () => {
 
     } catch (error) {
       console.error('Error in quick play:', error);
-      toast({
-        title: "Error",
-        description: "Failed to start playback. Please try again.",
-        variant: "destructive"
-      });
+      // Re-throw the error so the AnimeCard can handle it
+      throw error;
     }
   };
 
@@ -298,6 +306,9 @@ const Anime = () => {
               <p>Total Anime Count: {animes.length}</p>
               <p>Loading: {loading ? 'Yes' : 'No'}</p>
               <p>Collection: animes</p>
+              <p className="text-yellow-400 mt-2">
+                📱 Mobile Quick Play: Tap anime cards to play first episode directly
+              </p>
             </div>
           </div>
           
