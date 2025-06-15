@@ -9,10 +9,12 @@ import { SearchModal } from '../components/SearchModal';
 import { MovieDetailModal } from '../components/MovieDetailModal';
 import { LoginModal } from '../components/LoginModal';
 import { VideoPlayer } from '../components/VideoPlayer';
+import { AnimeEpisodeModal } from '../components/AnimeEpisodeModal';
 import { useAuth } from '../contexts/AuthContext';
 import { addToRecentlyWatched, getRecentlyWatched } from '../services/recentlyWatched';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '../hooks/use-toast';
+import { Episode } from '../types/Episode';
 
 interface AppMovie {
   id: string;
@@ -65,6 +67,8 @@ const Index = () => {
   const [selectedMovie, setSelectedMovie] = useState<AppMovie | null>(null);
   const [showMovieDetail, setShowMovieDetail] = useState(false);
   const [showVideoPlayer, setShowVideoPlayer] = useState(false);
+  const [showAnimeEpisodeModal, setShowAnimeEpisodeModal] = useState(false);
+  const [selectedAnime, setSelectedAnime] = useState<AppMovie | null>(null);
   const [watchlist, setWatchlist] = useState<string[]>([]);
   const [recentlyWatched, setRecentlyWatched] = useState<RecentlyWatchedMovie[]>([]);
   const [movies, setMovies] = useState<AppMovie[]>([]);
@@ -215,9 +219,39 @@ const Index = () => {
     }
   };
 
+  // Helper function to detect if content is anime
+  const isAnimeContent = (item: AppMovie | RecentlyWatchedMovie): boolean => {
+    return (
+      item.genre.toLowerCase().includes('anime') || 
+      item.genre.toLowerCase().includes('animation') ||
+      item.title.toLowerCase().includes('anime') ||
+      item.duration.includes('episodes') ||
+      animes.some(anime => anime.id === item.id)
+    );
+  };
+
   const handleMovieSelect = (movie: AppMovie | RecentlyWatchedMovie) => {
-    // Convert RecentlyWatchedMovie to AppMovie if needed
-    const fullMovie = movies.find(m => m.id === movie.id) || animes.find(a => a.id === movie.id) || {
+    // Check if this is anime content
+    if (isAnimeContent(movie)) {
+      const fullAnime = animes.find(a => a.id === movie.id) || {
+        ...movie,
+        backdrop: movie.poster,
+        description: 'No description available',
+        videoUrl: '',
+        releaseYear: movie.year,
+        language: 'Unknown',
+        isTrending: false,
+        isFeatured: false,
+        views: 0
+      } as AppMovie;
+      
+      setSelectedAnime(fullAnime);
+      setShowAnimeEpisodeModal(true);
+      return;
+    }
+
+    // Handle regular movies
+    const fullMovie = movies.find(m => m.id === movie.id) || {
       ...movie,
       backdrop: movie.poster,
       description: 'No description available',
@@ -234,8 +268,27 @@ const Index = () => {
   };
 
   const handlePlayMovie = (movie: AppMovie | RecentlyWatchedMovie) => {
-    // Convert RecentlyWatchedMovie to AppMovie if needed and add to recently watched
-    const fullMovie = movies.find(m => m.id === movie.id) || animes.find(a => a.id === movie.id) || {
+    // Check if this is anime content
+    if (isAnimeContent(movie)) {
+      const fullAnime = animes.find(a => a.id === movie.id) || {
+        ...movie,
+        backdrop: movie.poster,
+        description: 'No description available',
+        videoUrl: '',
+        releaseYear: movie.year,
+        language: 'Unknown',
+        isTrending: false,
+        isFeatured: false,
+        views: 0
+      } as AppMovie;
+      
+      setSelectedAnime(fullAnime);
+      setShowAnimeEpisodeModal(true);
+      return;
+    }
+
+    // Handle regular movies - convert RecentlyWatchedMovie to AppMovie if needed and add to recently watched
+    const fullMovie = movies.find(m => m.id === movie.id) || {
       ...movie,
       backdrop: movie.poster,
       description: 'No description available',
@@ -264,6 +317,34 @@ const Index = () => {
     
     setSelectedMovie(fullMovie);
     setShowMovieDetail(false);
+    setShowVideoPlayer(true);
+  };
+
+  const handleAnimeEpisodePlay = (episode: Episode) => {
+    console.log(`Playing anime episode ${episode.episodeNumber}: ${episode.title}`);
+    console.log('Episode video URL:', episode.videoUrl);
+    
+    // Create a movie-like object for the VideoPlayer component
+    const episodeAsMovie: AppMovie = {
+      id: episode.id,
+      title: `${selectedAnime?.title} - Episode ${episode.episodeNumber}: ${episode.title}`,
+      poster: selectedAnime?.poster || '/placeholder.svg',
+      backdrop: selectedAnime?.backdrop || selectedAnime?.poster || '/placeholder.svg',
+      year: selectedAnime?.year || new Date().getFullYear(),
+      genre: selectedAnime?.genre || 'Anime',
+      rating: selectedAnime?.rating || 0,
+      duration: episode.duration || '24min',
+      description: episode.description || selectedAnime?.description || 'No description available',
+      videoUrl: episode.videoUrl,
+      releaseYear: selectedAnime?.releaseYear,
+      language: selectedAnime?.language,
+      isTrending: selectedAnime?.isTrending,
+      isFeatured: selectedAnime?.isFeatured,
+      views: selectedAnime?.views
+    };
+    
+    setSelectedMovie(episodeAsMovie);
+    setShowAnimeEpisodeModal(false);
     setShowVideoPlayer(true);
   };
 
@@ -523,6 +604,15 @@ const Index = () => {
           onPlay={handlePlayMovie}
           isInWatchlist={selectedMovie ? watchlist.includes(selectedMovie.id) : false}
           onToggleWatchlist={handleToggleWatchlist}
+        />
+
+        <AnimeEpisodeModal
+          isOpen={showAnimeEpisodeModal}
+          onClose={() => setShowAnimeEpisodeModal(false)}
+          animeTitle={selectedAnime?.title || ''}
+          animeId={selectedAnime?.id || ''}
+          animePoster={selectedAnime?.poster || ''}
+          onEpisodePlay={handleAnimeEpisodePlay}
         />
 
         <LoginModal
