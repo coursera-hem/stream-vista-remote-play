@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { collection, getDocs, query, where, orderBy, limit } from 'firebase/firestore';
+import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { Sidebar } from '../components/Sidebar';
 import { SearchModal } from '../components/SearchModal';
@@ -155,81 +155,6 @@ const Anime = () => {
     setShowEpisodeModal(true);
   };
 
-  const handleQuickPlay = async (animeId: string) => {
-    if (!currentUser) {
-      navigate('/signin');
-      return;
-    }
-
-    try {
-      console.log('Quick play requested for anime:', animeId);
-      
-      // Find the anime
-      const anime = animes.find(a => a.id === animeId);
-      if (!anime) {
-        toast({
-          title: "Error",
-          description: "Anime not found",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      // Fetch the first episode directly
-      const episodesRef = collection(db, 'episodes');
-      const q = query(
-        episodesRef,
-        where('animeId', '==', animeId),
-        orderBy('episodeNumber', 'asc'),
-        limit(1)
-      );
-      
-      const querySnapshot = await getDocs(q);
-      
-      if (querySnapshot.empty) {
-        toast({
-          title: "No Episodes",
-          description: "This anime doesn't have any episodes yet.",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      const firstEpisodeDoc = querySnapshot.docs[0];
-      const episodeData = firstEpisodeDoc.data();
-      
-      const episode: Episode = {
-        id: firstEpisodeDoc.id,
-        animeId: episodeData.animeId,
-        episodeNumber: episodeData.episodeNumber,
-        title: episodeData.title,
-        description: episodeData.description || '',
-        videoUrl: episodeData.videoUrl,
-        thumbnail: episodeData.thumbnail,
-        duration: episodeData.duration,
-        airDate: episodeData.airDate ? episodeData.airDate.toDate() : undefined,
-        views: episodeData.views || 0,
-        createdAt: episodeData.createdAt ? episodeData.createdAt.toDate() : new Date(),
-        updatedAt: episodeData.updatedAt ? episodeData.updatedAt.toDate() : new Date()
-      };
-
-      console.log('First episode found:', episode);
-      
-      // Set up for video player
-      setSelectedAnime(anime);
-      setSelectedEpisode(episode);
-      setShowVideoPlayer(true);
-
-    } catch (error) {
-      console.error('Error in quick play:', error);
-      toast({
-        title: "Error",
-        description: "Failed to start playback. Please try again.",
-        variant: "destructive"
-      });
-    }
-  };
-
   // Convert Episode to Movie format for VideoPlayer
   const episodeAsMovie = selectedEpisode && selectedAnime ? {
     id: selectedEpisode.id,
@@ -332,7 +257,6 @@ const Anime = () => {
                   description={anime.description}
                   onPlay={() => handleAnimePlay(anime)}
                   onEpisodeSelect={() => handleAnimeCardClick(anime)}
-                  onQuickPlay={handleQuickPlay}
                 />
               ))}
             </div>

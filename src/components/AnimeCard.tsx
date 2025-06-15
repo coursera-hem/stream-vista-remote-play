@@ -14,11 +14,9 @@ interface AnimeCardProps {
   description: string;
   onPlay?: () => void;
   onEpisodeSelect?: (episodeNumber: number) => void;
-  onQuickPlay?: (animeId: string) => void;
 }
 
 export const AnimeCard: React.FC<AnimeCardProps> = ({
-  id,
   title,
   poster,
   genre,
@@ -28,12 +26,10 @@ export const AnimeCard: React.FC<AnimeCardProps> = ({
   rating,
   description,
   onPlay,
-  onEpisodeSelect,
-  onQuickPlay
+  onEpisodeSelect
 }) => {
   const [imageError, setImageError] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
-  const [isQuickPlaying, setIsQuickPlaying] = useState(false);
 
   const handleImageError = () => {
     console.log('Image failed to load for anime:', title);
@@ -46,24 +42,15 @@ export const AnimeCard: React.FC<AnimeCardProps> = ({
     setImageLoaded(true);
   };
 
-  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-
   const handleCardClick = () => {
-    if (isMobile && onQuickPlay) {
-      // On mobile, try quick play first
-      console.log('Mobile device detected, attempting quick play for:', title);
-      setIsQuickPlaying(true);
-      onQuickPlay(id);
-    } else {
-      // On desktop, show episode selection
-      if (onEpisodeSelect) {
-        onEpisodeSelect(1);
-      }
+    // When card is clicked, trigger episode selection with episode 1 as default
+    if (onEpisodeSelect) {
+      onEpisodeSelect(1);
     }
   };
 
   const handlePlayClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
+    e.stopPropagation(); // Prevent card click when play button is clicked
     if (onPlay) {
       onPlay();
     }
@@ -71,19 +58,9 @@ export const AnimeCard: React.FC<AnimeCardProps> = ({
 
   return (
     <div 
-      className="bg-gray-800 rounded-lg overflow-hidden hover:scale-105 transition-transform duration-300 group cursor-pointer relative"
+      className="bg-gray-800 rounded-lg overflow-hidden hover:scale-105 transition-transform duration-300 group cursor-pointer"
       onClick={handleCardClick}
     >
-      {/* Quick play loading indicator for mobile */}
-      {isQuickPlaying && (
-        <div className="absolute inset-0 bg-black bg-opacity-75 flex items-center justify-center z-20">
-          <div className="text-center text-white">
-            <div className="w-8 h-8 border-4 border-white border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
-            <p className="text-sm">Starting playback...</p>
-          </div>
-        </div>
-      )}
-
       <div className="relative">
         {imageError ? (
           <div className="w-full h-64 bg-gray-700 flex items-center justify-center">
@@ -117,14 +94,6 @@ export const AnimeCard: React.FC<AnimeCardProps> = ({
             <Play size={24} fill="white" />
           </button>
         </div>
-        
-        {/* Mobile play indicator */}
-        {isMobile && (
-          <div className="absolute top-2 left-2 bg-red-600 text-white px-2 py-1 rounded text-xs font-semibold">
-            Tap to Play
-          </div>
-        )}
-        
         <div className="absolute top-2 right-2 bg-black bg-opacity-70 text-white px-2 py-1 rounded text-sm">
           {status}
         </div>
